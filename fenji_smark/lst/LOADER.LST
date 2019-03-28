@@ -1,0 +1,2534 @@
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 1
+..\obj\loader.asm
+
+
+
+      1					     ifndef  ??version
+      2				     ?debug  macro
+      3					     endm
+      4				     publicdll macro name
+      5					     public  name
+      6					     endm
+      7				     $comm   macro   name,dist,size,count
+      8					     comm    dist name:BYTE:count*size
+      9					     endm
+     10					     else
+     11				     $comm   macro   name,dist,size,count
+     12					     comm    dist name[size]:BYTE:count
+     13					     endm
+     14					     endif
+     15					     ?debug  V 300h
+*Warning* ..\obj\loader.asm(15)	?DEBUG ignored when /ZI	or /ZD enabled
+     16					     ?debug  S "boot\loader.c"
+*Warning* ..\obj\loader.asm(16)	?DEBUG ignored when /ZI	or /ZD enabled
+     17					     ?debug  C E9F05893410D626F6F745C6C6F616465722E63
+*Warning* ..\obj\loader.asm(17)	?DEBUG ignored when /ZI	or /ZD enabled
+     18					     ?debug  C E917ADAA2A1E2E2E5C2E2E5C746F6F6C735C626333315C696E636C+
+*Warning* ..\obj\loader.asm(18)	?DEBUG ignored when /ZI	or /ZD enabled
+     19					     ?debug  C 7564655C646F732E68
+*Warning* ..\obj\loader.asm(19)	?DEBUG ignored when /ZI	or /ZD enabled
+     20					     ?debug  C E94059CA18202E2E5C2E2E5C746F6F6C735C626333315C696E636C+
+*Warning* ..\obj\loader.asm(20)	?DEBUG ignored when /ZI	or /ZD enabled
+     21					     ?debug  C 7564655C5F646566732E68
+*Warning* ..\obj\loader.asm(21)	?DEBUG ignored when /ZI	or /ZD enabled
+     22	0000			     LOADER_TEXT     segment byte public 'CODE'
+     23	0000			     LOADER_TEXT     ends
+     24				     DGROUP  group   _DATA,_BSS
+     25					     assume  cs:LOADER_TEXT,ds:DGROUP
+     26	0000			     _DATA   segment word public 'DATA'
+     27	0000			     d@	     label   byte
+     28	0000			     d@w     label   word
+     29	0000			     _DATA   ends
+     30	0000			     _BSS    segment word public 'BSS'
+     31	0000			     b@	     label   byte
+     32	0000			     b@w     label   word
+     33	0000			     _BSS    ends
+     34	0000			     _DATA   segment word public 'DATA'
+     35	0000			     _boot_GpioWatchDogStarted	     label   byte
+     36	0000  01			     db	     1
+     37	0001			     _DATA   ends
+     38	0000			     LOADER_TEXT     segment byte public 'CODE'
+     39					     ?debug  C E8010D626F6F745C6C6F616465722E63F0589341
+*Warning* ..\obj\loader.asm(39)	?DEBUG ignored when /ZI	or /ZD enabled
+     40					;
+     41					;    void loader(void)
+     42					;
+     43					     ?debug  L 69
+*Warning* ..\obj\loader.asm(43)	?DEBUG ignored when /ZI	or /ZD enabled
+     44					     assume  cs:LOADER_TEXT
+     45	0000			     _loader proc    far
+     46					     ?debug  B
+*Warning* ..\obj\loader.asm(46)	?DEBUG ignored when /ZI	or /ZD enabled
+     47	0000  55			     push    bp
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 2
+..\obj\loader.asm
+
+
+
+     48	0001  8B EC			     mov     bp,sp
+     49	0003  83 EC 0E			     sub     sp,14
+     50					     ?debug  B
+*Warning* ..\obj\loader.asm(50)	?DEBUG ignored when /ZI	or /ZD enabled
+     51					;
+     52					;    {
+     53					;
+     54					;      INT8U boot_send_comm[10];
+     55					;      INT8U sendlength, crc, i;
+     56					;
+     57					;      Boot_InitComm(BOOT_UART0_TX_STATUS, 57600, 3, 0xc7, 1);	       // 0xc7
+     58					;
+     59					     ?debug  L 75
+*Warning* ..\obj\loader.asm(59)	?DEBUG ignored when /ZI	or /ZD enabled
+     60	0006  B0 01			     mov     al,1
+     61	0008  50			     push    ax
+     62	0009  B0 C7			     mov     al,199
+     63	000B  50			     push    ax
+     64	000C  B0 03			     mov     al,3
+     65	000E  50			     push    ax
+     66	000F  33 C0			     xor     ax,ax
+     67	0011  BA E100			     mov     dx,-7936
+     68	0014  50			     push    ax
+     69	0015  52			     push    dx
+     70	0016  B8 FF80			     mov     ax,-128
+     71	0019  50			     push    ax
+     72	001A  0E E8 00E1 90		     call    far ptr _Boot_InitComm
+     73	001F  83 C4 0C			     add     sp,12
+     74					;
+     75					;
+     76					;      sendlength = 6;//263;
+     77					;
+     78					     ?debug  L 77
+*Warning* ..\obj\loader.asm(78)	?DEBUG ignored when /ZI	or /ZD enabled
+     79	0022  C6 46 F5 06		     mov     byte ptr [bp-11],6
+     80					;
+     81					;      boot_send_comm[0] = 0xAA;
+     82					;
+     83					     ?debug  L 78
+*Warning* ..\obj\loader.asm(83)	?DEBUG ignored when /ZI	or /ZD enabled
+     84	0026  C6 46 F6 AA		     mov     byte ptr [bp-10],170
+     85					;
+     86					;      boot_send_comm[1] = (sendlength - 3) / 256;
+     87					;
+     88					     ?debug  L 79
+*Warning* ..\obj\loader.asm(88)	?DEBUG ignored when /ZI	or /ZD enabled
+     89	002A  8A 46 F5			     mov     al,byte ptr [bp-11]
+     90	002D  B4 00			     mov     ah,0
+     91	002F  05 FFFD			     add     ax,-3
+     92	0032  BB 0100			     mov     bx,256
+     93	0035  99			     cwd
+     94	0036  F7 FB			     idiv    bx
+     95	0038  88 46 F7			     mov     byte ptr [bp-9],al
+     96					;
+     97					;      boot_send_comm[2] = (sendlength - 3) % 256;
+     98					;
+     99					     ?debug  L 80
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 3
+..\obj\loader.asm
+
+
+
+*Warning* ..\obj\loader.asm(99)	?DEBUG ignored when /ZI	or /ZD enabled
+    100	003B  8A 46 F5			     mov     al,byte ptr [bp-11]
+    101	003E  B4 00			     mov     ah,0
+    102	0040  05 FFFD			     add     ax,-3
+    103	0043  BB 0100			     mov     bx,256
+    104	0046  99			     cwd
+    105	0047  F7 FB			     idiv    bx
+    106	0049  88 56 F8			     mov     byte ptr [bp-8],dl
+    107					;
+    108					;      boot_send_comm[3] = BOOT_DOWNLOADFILE;
+    109					;
+    110					     ?debug  L 81
+*Warning* ..\obj\loader.asm(110) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    111	004C  C6 46 F9 E0		     mov     byte ptr [bp-7],224
+    112					;
+    113					;      boot_send_comm[4] = BOOT_STARTDOWN;	       //命令类型 请求下载;
+    114					;
+    115					     ?debug  L 82
+*Warning* ..\obj\loader.asm(115) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    116	0050  C6 46 FA 03		     mov     byte ptr [bp-6],3
+    117					;
+    118					;      crc = 0;
+    119					;
+    120					     ?debug  L 83
+*Warning* ..\obj\loader.asm(120) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    121	0054  C6 46 F4 00		     mov     byte ptr [bp-12],0
+    122					;
+    123					;      for(i=1;	i<(sendlength -	1); i++)
+    124					;
+    125					     ?debug  L 84
+*Warning* ..\obj\loader.asm(125) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    126	0058  C6 46 F3 01		     mov     byte ptr [bp-13],1
+    127	005C  EB 15			     jmp     short @1@114
+    128	005E			     @1@58:
+    129					;
+    130					;	 crc +=	boot_send_comm[i];
+    131					;
+    132					     ?debug  L 85
+*Warning* ..\obj\loader.asm(132) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    133	005E  8A 46 F3			     mov     al,byte ptr [bp-13]
+    134	0061  B4 00			     mov     ah,0
+    135	0063  8D 56 F6			     lea     dx,word ptr [bp-10]
+    136	0066  03 C2			     add     ax,dx
+    137	0068  8B D8			     mov     bx,ax
+    138	006A  36: 8A 07			     mov     al,byte ptr ss:[bx]
+    139	006D  00 46 F4			     add     byte ptr [bp-12],al
+    140					     ?debug  L 84
+*Warning* ..\obj\loader.asm(140) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    141	0070  FE 46 F3			     inc     byte ptr [bp-13]
+    142	0073			     @1@114:
+    143	0073  8A 46 F3			     mov     al,byte ptr [bp-13]
+    144	0076  B4 00			     mov     ah,0
+    145	0078  8A 56 F5			     mov     dl,byte ptr [bp-11]
+    146	007B  B6 00			     mov     dh,0
+    147	007D  4A			     dec     dx
+    148	007E  3B C2			     cmp     ax,dx
+    149	0080  7C DC			     jl	     short @1@58
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 4
+..\obj\loader.asm
+
+
+
+    150					;
+    151					;      boot_send_comm[sendlength - 1] =	crc;
+    152					;
+    153					     ?debug  L 86
+*Warning* ..\obj\loader.asm(153) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    154	0082  8A 46 F5			     mov     al,byte ptr [bp-11]
+    155	0085  B4 00			     mov     ah,0
+    156	0087  8D 56 F5			     lea     dx,word ptr [bp-11]
+    157	008A  03 C2			     add     ax,dx
+    158	008C  8A 56 F4			     mov     dl,byte ptr [bp-12]
+    159	008F  8B D8			     mov     bx,ax
+    160	0091  36: 88 17			     mov     byte ptr ss:[bx],dl
+    161					;
+    162					;
+    163					;      outportb(BOOT_UART0_TX_DATA, 0x66);
+    164					;
+    165					     ?debug  L 88
+*Warning* ..\obj\loader.asm(165) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    166	0094  BA FF81			     mov     dx,-127
+    167	0097  B0 66			     mov     al,102
+    168	0099  EE			     out     dx,al
+    169					;
+    170					;      outportb(BOOT_UART0_TX_DATA, 0x77);
+    171					;
+    172					     ?debug  L 89
+*Warning* ..\obj\loader.asm(172) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    173	009A  BA FF81			     mov     dx,-127
+    174	009D  B0 77			     mov     al,119
+    175	009F  EE			     out     dx,al
+    176					;
+    177					;      boot_down_flag =	0;
+    178					;
+    179					     ?debug  L 90
+*Warning* ..\obj\loader.asm(179) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    180	00A0  C6 06 0000e 00		     mov     byte ptr DGROUP:_boot_down_flag,0
+    181					;
+    182					;      for(i=0;	i<sendlength; i++)
+    183					;
+    184					     ?debug  L 91
+*Warning* ..\obj\loader.asm(184) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    185	00A5  C6 46 F3 00		     mov     byte ptr [bp-13],0
+    186	00A9  EB 26			     jmp     short @1@282
+    187	00AB			     @1@170:
+    188	00AB  EB 00			     jmp     short @1@198
+    189	00AD			     @1@198:
+    190					;
+    191					;	{
+    192					;	 while((inportb(BOOT_UART0_TX_STATUS)&0x1)!=0x1);    //	等待发送保持器为空
+    193					;
+    194					     ?debug  L 93
+*Warning* ..\obj\loader.asm(194) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    195	00AD  BA FF80			     mov     dx,-128
+    196	00B0  EC			     in	     al,dx
+    197	00B1  B4 00			     mov     ah,0
+    198	00B3  25 0001			     and     ax,1
+    199	00B6  3D 0001			     cmp     ax,1
+    200	00B9  75 F2			     jne     short @1@198
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 5
+..\obj\loader.asm
+
+
+
+    201					;
+    202					;	 outportb(BOOT_UART0_TX_DATA, boot_send_comm[i]);			     //	    +
+    203				     发送字符
+    204					;
+    205					     ?debug  L 94
+*Warning* ..\obj\loader.asm(204) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    206	00BB  8A 46 F3			     mov     al,byte ptr [bp-13]
+    207	00BE  B4 00			     mov     ah,0
+    208	00C0  8D 56 F6			     lea     dx,word ptr [bp-10]
+    209	00C3  03 C2			     add     ax,dx
+    210	00C5  8B D8			     mov     bx,ax
+    211	00C7  36: 8A 07			     mov     al,byte ptr ss:[bx]
+    212	00CA  BA FF81			     mov     dx,-127
+    213	00CD  EE			     out     dx,al
+    214					     ?debug  L 91
+*Warning* ..\obj\loader.asm(213) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    215	00CE  FE 46 F3			     inc     byte ptr [bp-13]
+    216	00D1			     @1@282:
+    217	00D1  8A 46 F3			     mov     al,byte ptr [bp-13]
+    218	00D4  3A 46 F5			     cmp     al,byte ptr [bp-11]
+    219	00D7  72 D2			     jb	     short @1@170
+    220					;
+    221					;	}
+    222					;      boot_dtime = 0;
+    223					;
+    224					     ?debug  L 96
+*Warning* ..\obj\loader.asm(223) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    225	00D9  C7 06 0000e 0000		     mov     word ptr DGROUP:_boot_dtime,0
+    226	00DF			     @1@338:
+    227					;
+    228					;      while(1)
+    229					;	{
+    230					;	 Boot_comm_upgrade();
+    231					;
+    232					     ?debug  L 99
+*Warning* ..\obj\loader.asm(231) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    233	00DF  0E E8 0099 90		     call    far ptr _Boot_comm_upgrade
+    234					;
+    235					;	 if(boot_down_flag == 0)
+    236					;
+    237					     ?debug  L 100
+*Warning* ..\obj\loader.asm(236) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    238	00E4  80 3E 0000e 00		     cmp     byte ptr DGROUP:_boot_down_flag,0
+    239	00E9  75 04			     jne     short @1@394
+    240					;
+    241					;	   boot_dtime ++;
+    242					;
+    243					     ?debug  L 101
+*Warning* ..\obj\loader.asm(242) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    244	00EB  FF 06 0000e		     inc     word ptr DGROUP:_boot_dtime
+    245	00EF			     @1@394:
+    246					;
+    247					;	 if(boot_dtime >= 10000)
+    248					;
+    249					     ?debug  L 102
+*Warning* ..\obj\loader.asm(248) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    250	00EF  81 3E 0000e 2710		     cmp     word ptr DGROUP:_boot_dtime,10000
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 6
+..\obj\loader.asm
+
+
+
+    251	00F5  72 02			     jb	     short @1@450
+    252					;
+    253					;	   break;
+    254					;
+    255					     ?debug  L 103
+*Warning* ..\obj\loader.asm(254) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    256	00F7  EB 02			     jmp     short @1@478
+    257	00F9			     @1@450:
+    258	00F9  EB E4			     jmp     short @1@338
+    259	00FB			     @1@478:
+    260					;
+    261					;	}
+    262					;    }
+    263					;
+    264					     ?debug  L 105
+*Warning* ..\obj\loader.asm(263) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    265	00FB  8B E5			     mov     sp,bp
+    266	00FD  5D			     pop     bp
+    267	00FE  CB			     ret
+    268					     ?debug  C E318000A001A08
+*Warning* ..\obj\loader.asm(267) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    269					     ?debug  C E601690802F3FF00036372630802F4FF000A7365+
+*Warning* ..\obj\loader.asm(268) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    270					     ?debug  C 6E646C656E6774680802F5FF000E626F6F745F73+
+*Warning* ..\obj\loader.asm(269) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    271					     ?debug  C 656E645F636F6D6D1802F6FF00
+*Warning* ..\obj\loader.asm(270) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    272					     ?debug  E
+*Warning* ..\obj\loader.asm(271) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    273					     ?debug  E
+*Warning* ..\obj\loader.asm(272) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    274	00FF			     _loader endp
+    275					;
+    276					;    void Boot_InitComm(INT16U port, INT32U baud, INT8U	datafrm, INT8U fifolevel, INT8U	freq)
+    277					;
+    278					     ?debug  L 107
+*Warning* ..\obj\loader.asm(277) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    279					     assume  cs:LOADER_TEXT
+    280	00FF			     _Boot_InitComm  proc    far
+    281					     ?debug  B
+*Warning* ..\obj\loader.asm(280) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    282	00FF  55			     push    bp
+    283	0100  8B EC			     mov     bp,sp
+    284	0102  83 EC 02			     sub     sp,2
+    285					     ?debug  C E60466726571080A100000096669666F6C657665+
+*Warning* ..\obj\loader.asm(284) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    286					     ?debug  C 6C080A0E0000076461746166726D080A0C000004+
+*Warning* ..\obj\loader.asm(285) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    287					     ?debug  C 626175640C0A08000004706F72740A0A060000
+*Warning* ..\obj\loader.asm(286) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    288					     ?debug  B
+*Warning* ..\obj\loader.asm(287) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    289					;
+    290					;    {
+    291					;	     INT16U gen;
+    292					;	 /* set	baudrate */
+    293					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 7
+..\obj\loader.asm
+
+
+
+    294					;	     gen = BOOT_CPU_MAIN_FREQ/baud/freq;   //20120222 改晶振
+    295					;
+    296					     ?debug  L 112
+*Warning* ..\obj\loader.asm(295) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    297	0105  8A 46 10			     mov     al,byte ptr [bp+16]
+    298	0108  B4 00			     mov     ah,0
+    299	010A  99			     cwd
+    300	010B  52			     push    dx
+    301	010C  50			     push    ax
+    302	010D  FF 76 0A			     push    word ptr [bp+10]
+    303	0110  FF 76 08			     push    word ptr [bp+8]
+    304	0113  B8 02EE			     mov     ax,750
+    305	0116  33 D2			     xor     dx,dx
+    306	0118  50			     push    ax
+    307	0119  52			     push    dx
+    308	011A  9A 00000000se		     call    far ptr F_LUDIV@
+    309	011F  52			     push    dx
+    310	0120  50			     push    ax
+    311	0121  9A 00000000se		     call    far ptr F_LUDIV@
+    312	0126  89 46 FE			     mov     word ptr [bp-2],ax
+    313					;
+    314					;
+    315					;	outportb(port+4, (gen&0xff));
+    316					;
+    317					     ?debug  L 114
+*Warning* ..\obj\loader.asm(316) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    318	0129  8B 56 06			     mov     dx,word ptr [bp+6]
+    319	012C  83 C2 04			     add     dx,4
+    320	012F  8A 46 FE			     mov     al,byte ptr [bp-2]
+    321	0132  24 FF			     and     al,255
+    322	0134  EE			     out     dx,al
+    323					;
+    324					;	outportb(port+5, (gen>>8));
+    325					;
+    326					     ?debug  L 115
+*Warning* ..\obj\loader.asm(325) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    327	0135  8B 46 FE			     mov     ax,word ptr [bp-2]
+    328	0138  B1 08			     mov     cl,8
+    329	013A  D3 E8			     shr     ax,cl
+    330	013C  8B 56 06			     mov     dx,word ptr [bp+6]
+    331	013F  83 C2 05			     add     dx,5
+    332	0142  EE			     out     dx,al
+    333					;
+    334					;	outportb(port+2, fifolevel);
+    335					;
+    336					     ?debug  L 116
+*Warning* ..\obj\loader.asm(335) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    337	0143  8B 56 06			     mov     dx,word ptr [bp+6]
+    338	0146  83 C2 02			     add     dx,2
+    339	0149  8A 46 0E			     mov     al,byte ptr [bp+14]
+    340	014C  EE			     out     dx,al
+    341					;
+    342					;
+    343					;      dtemp_valid = 0;
+    344					;
+    345					     ?debug  L 118
+*Warning* ..\obj\loader.asm(344) ?DEBUG	ignored	when /ZI or /ZD	enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 8
+..\obj\loader.asm
+
+
+
+    346	014D  C6 06 0000e 00		     mov     byte ptr DGROUP:_dtemp_valid,0
+    347					;
+    348					;      dtemp_pos = 0;
+    349					;
+    350					     ?debug  L 119
+*Warning* ..\obj\loader.asm(349) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    351	0152  C7 06 0000e 0000		     mov     word ptr DGROUP:_dtemp_pos,0
+    352					;
+    353					;
+    354					;    }
+    355					;
+    356					     ?debug  L 121
+*Warning* ..\obj\loader.asm(355) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    357	0158  8B E5			     mov     sp,bp
+    358	015A  5D			     pop     bp
+    359	015B  CB			     ret
+    360					     ?debug  C E60367656E0A02FEFF0004706F72740A0A060000+
+*Warning* ..\obj\loader.asm(359) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    361					     ?debug  C 04626175640C0A080000076461746166726D080A+
+*Warning* ..\obj\loader.asm(360) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    362					     ?debug  C 0C0000096669666F6C6576656C080A0E00000466+
+*Warning* ..\obj\loader.asm(361) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    363					     ?debug  C 726571080A100000
+*Warning* ..\obj\loader.asm(362) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    364					     ?debug  E
+*Warning* ..\obj\loader.asm(363) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    365					     ?debug  E
+*Warning* ..\obj\loader.asm(364) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    366	015C			     _Boot_InitComm  endp
+    367					;
+    368					;    void interrupt Boot_IdleInt()
+    369					;
+    370					     ?debug  L 123
+*Warning* ..\obj\loader.asm(369) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    371					     assume  cs:LOADER_TEXT
+    372	015C			     _Boot_IdleInt   proc    far
+    373					     ?debug  B
+*Warning* ..\obj\loader.asm(372) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    374	015C  50			     push    ax
+    375	015D  53			     push    bx
+    376	015E  51			     push    cx
+    377	015F  52			     push    dx
+    378	0160  06			     push    es
+    379	0161  1E			     push    ds
+    380	0162  56			     push    si
+    381	0163  57			     push    di
+    382	0164  55			     push    bp
+    383	0165  BD 0000s			     mov     bp,DGROUP
+    384	0168  8E DD			     mov     ds,bp
+    385	016A  8B EC			     mov     bp,sp
+    386					     ?debug  B
+*Warning* ..\obj\loader.asm(385) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    387					;
+    388					;    {
+    389					;      outportb(BOOT_UART0_TX_DATA, 16);			     //	发送字符
+    390					;
+    391					     ?debug  L 125
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 9
+..\obj\loader.asm
+
+
+
+*Warning* ..\obj\loader.asm(390) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    392	016C  BA FF81			     mov     dx,-127
+    393	016F  B0 10			     mov     al,16
+    394	0171  EE			     out     dx,al
+    395					;
+    396					;    }
+    397					;
+    398					     ?debug  L 126
+*Warning* ..\obj\loader.asm(397) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    399	0172  5D			     pop     bp
+    400	0173  5F			     pop     di
+    401	0174  5E			     pop     si
+    402	0175  1F			     pop     ds
+    403	0176  07			     pop     es
+    404	0177  5A			     pop     dx
+    405	0178  59			     pop     cx
+    406	0179  5B			     pop     bx
+    407	017A  58			     pop     ax
+    408	017B  CF			     iret
+    409					     ?debug  E
+*Warning* ..\obj\loader.asm(408) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    410					     ?debug  E
+*Warning* ..\obj\loader.asm(409) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    411	017C			     _Boot_IdleInt   endp
+    412					;
+    413					;    void Boot_comm_upgrade(void)    //20110608	xu 初始升级
+    414					;
+    415					     ?debug  L 128
+*Warning* ..\obj\loader.asm(414) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    416					     assume  cs:LOADER_TEXT
+    417	017C			     _Boot_comm_upgrade	     proc    far
+    418					     ?debug  B
+*Warning* ..\obj\loader.asm(417) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    419	017C  55			     push    bp
+    420	017D  8B EC			     mov     bp,sp
+    421	017F  83 EC 0A			     sub     sp,10
+    422					     ?debug  B
+*Warning* ..\obj\loader.asm(421) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    423	0182  E9 0180			     jmp     @4@758
+    424	0185			     @4@58:
+    425					;
+    426					;    {
+    427					;      INT8U recv_byte,	crc;
+    428					;      INT16U CurrPackage;
+    429					;      INT16U i;
+    430					;      INT32U padd;
+    431					;
+    432					;	     while((inportb(BOOT_UART0_RX_CTRL)&0x10)==0x10)
+    433					;	      {
+    434					;	       boot_ClearWatchDog();
+    435					;
+    436					     ?debug  L 137
+*Warning* ..\obj\loader.asm(435) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    437	0185  0E E8 0375 90		     call    far ptr _boot_ClearWatchDog
+    438					;
+    439					;	       recv_byte = inportb(BOOT_UART0_RX_DATA);
+    440					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 10
+..\obj\loader.asm
+
+
+
+    441					     ?debug  L 138
+*Warning* ..\obj\loader.asm(440) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    442	018A  BA FF83			     mov     dx,-125
+    443	018D  EC			     in	     al,dx
+    444	018E  88 46 FF			     mov     byte ptr [bp-1],al
+    445					;
+    446					;	       if(dtemp_valid == 0)
+    447					;
+    448					     ?debug  L 139
+*Warning* ..\obj\loader.asm(447) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    449	0191  80 3E 0000e 00		     cmp     byte ptr DGROUP:_dtemp_valid,0
+    450	0196  75 23			     jne     short @4@170
+    451					;
+    452					;		{
+    453					;		  if(recv_byte == 0xAA)	     //包开始
+    454					;
+    455					     ?debug  L 141
+*Warning* ..\obj\loader.asm(454) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    456	0198  80 7E FF AA		     cmp     byte ptr [bp-1],170
+    457	019C  75 1A			     jne     short @4@142
+    458					;
+    459					;		   {
+    460					;		    dtemp_valid	= 1;
+    461					;
+    462					     ?debug  L 143
+*Warning* ..\obj\loader.asm(461) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    463	019E  C6 06 0000e 01		     mov     byte ptr DGROUP:_dtemp_valid,1
+    464					;
+    465					;		    dtemp_pos =	0;
+    466					;
+    467					     ?debug  L 144
+*Warning* ..\obj\loader.asm(466) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    468	01A3  C7 06 0000e 0000		     mov     word ptr DGROUP:_dtemp_pos,0
+    469					;
+    470					;		    boot_dtemp[dtemp_pos] = recv_byte;
+    471					;
+    472					     ?debug  L 145
+*Warning* ..\obj\loader.asm(471) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    473	01A9  8B 1E 0000e		     mov     bx,word ptr DGROUP:_dtemp_pos
+    474	01AD  8A 46 FF			     mov     al,byte ptr [bp-1]
+    475	01B0  88 87 0000e		     mov     byte ptr DGROUP:_boot_dtemp[bx],al
+    476					;
+    477					;		    dtemp_pos ++;
+    478					;
+    479					     ?debug  L 146
+*Warning* ..\obj\loader.asm(478) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    480	01B4  FF 06 0000e		     inc     word ptr DGROUP:_dtemp_pos
+    481	01B8			     @4@142:
+    482					;
+    483					;		   }
+    484					;		}
+    485					;
+    486					     ?debug  L 148
+*Warning* ..\obj\loader.asm(485) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    487	01B8  E9 014A			     jmp     @4@758
+    488	01BB			     @4@170:
+    489					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 11
+..\obj\loader.asm
+
+
+
+    490					;	       else
+    491					;		{
+    492					;		 boot_dtemp[dtemp_pos] = recv_byte;
+    493					;
+    494					     ?debug  L 151
+*Warning* ..\obj\loader.asm(493) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    495	01BB  8B 1E 0000e		     mov     bx,word ptr DGROUP:_dtemp_pos
+    496	01BF  8A 46 FF			     mov     al,byte ptr [bp-1]
+    497	01C2  88 87 0000e		     mov     byte ptr DGROUP:_boot_dtemp[bx],al
+    498					;
+    499					;		 dtemp_pos ++;
+    500					;
+    501					     ?debug  L 152
+*Warning* ..\obj\loader.asm(500) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    502	01C6  FF 06 0000e		     inc     word ptr DGROUP:_dtemp_pos
+    503					;
+    504					;		 if(dtemp_pos == 3)
+    505					;
+    506					     ?debug  L 153
+*Warning* ..\obj\loader.asm(505) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    507	01CA  83 3E 0000e 03		     cmp     word ptr DGROUP:_dtemp_pos,3
+    508	01CF  75 17			     jne     short @4@226
+    509					;
+    510					;		  {
+    511					;		   dtemp_len = boot_dtemp[1];
+    512					;
+    513					     ?debug  L 155
+*Warning* ..\obj\loader.asm(512) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    514	01D1  A0 0001e			     mov     al,byte ptr DGROUP:_boot_dtemp+1
+    515	01D4  B4 00			     mov     ah,0
+    516	01D6  A3 0000e			     mov     word ptr DGROUP:_dtemp_len,ax
+    517					;
+    518					;		   dtemp_len <<= 8;//*256
+    519					;
+    520					     ?debug  L 156
+*Warning* ..\obj\loader.asm(519) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    521	01D9  B1 08			     mov     cl,8
+    522	01DB  D3 26 0000e		     shl     word ptr DGROUP:_dtemp_len,cl
+    523					;
+    524					;		   dtemp_len +=	boot_dtemp[2];
+    525					;
+    526					     ?debug  L 157
+*Warning* ..\obj\loader.asm(525) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    527	01DF  A0 0002e			     mov     al,byte ptr DGROUP:_boot_dtemp+2
+    528	01E2  B4 00			     mov     ah,0
+    529	01E4  01 06 0000e		     add     word ptr DGROUP:_dtemp_len,ax
+    530	01E8			     @4@226:
+    531					;
+    532					;		  }
+    533					;		 if(dtemp_pos == (dtemp_len + 3))   //接收到一个包
+    534					;
+    535					     ?debug  L 159
+*Warning* ..\obj\loader.asm(534) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    536	01E8  A1 0000e			     mov     ax,word ptr DGROUP:_dtemp_len
+    537	01EB  05 0003			     add     ax,3
+    538	01EE  3B 06 0000e		     cmp     ax,word ptr DGROUP:_dtemp_pos
+    539	01F2  74 03			     je	     @@0
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 12
+..\obj\loader.asm
+
+
+
+    540	01F4  E9 010E			     jmp     @4@758
+    541	01F7			     @@0:
+    542					;
+    543					;		  {
+    544					;		    crc	= 0;
+    545					;
+    546					     ?debug  L 161
+*Warning* ..\obj\loader.asm(545) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    547	01F7  C6 46 FE 00		     mov     byte ptr [bp-2],0
+    548					;
+    549					;		    for(i=1; i<(dtemp_pos - 1);	i++)
+    550					;
+    551					     ?debug  L 162
+*Warning* ..\obj\loader.asm(550) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    552	01FB  C7 46 FA 0001		     mov     word ptr [bp-6],1
+    553	0200  EB 0D			     jmp     short @4@338
+    554	0202			     @4@282:
+    555					;
+    556					;		      crc += boot_dtemp[i];
+    557					;
+    558					     ?debug  L 163
+*Warning* ..\obj\loader.asm(557) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    559	0202  8B 5E FA			     mov     bx,word ptr [bp-6]
+    560	0205  8A 87 0000e		     mov     al,byte ptr DGROUP:_boot_dtemp[bx]
+    561	0209  00 46 FE			     add     byte ptr [bp-2],al
+    562					     ?debug  L 162
+*Warning* ..\obj\loader.asm(561) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    563	020C  FF 46 FA			     inc     word ptr [bp-6]
+    564	020F			     @4@338:
+    565	020F  A1 0000e			     mov     ax,word ptr DGROUP:_dtemp_pos
+    566	0212  48			     dec     ax
+    567	0213  3B 46 FA			     cmp     ax,word ptr [bp-6]
+    568	0216  77 EA			     ja	     short @4@282
+    569					;
+    570					;		    if(boot_dtemp[dtemp_pos - 1] == crc)
+    571					;
+    572					     ?debug  L 164
+*Warning* ..\obj\loader.asm(571) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    573	0218  8B 1E 0000e		     mov     bx,word ptr DGROUP:_dtemp_pos
+    574	021C  4B			     dec     bx
+    575	021D  8A 87 0000e		     mov     al,byte ptr DGROUP:_boot_dtemp[bx]
+    576	0221  3A 46 FE			     cmp     al,byte ptr [bp-2]
+    577	0224  74 03			     je	     @@1
+    578	0226  E9 00D1			     jmp     @4@730
+    579	0229			     @@1:
+    580					;
+    581					;		     {
+    582					;		      boot_dtime = 0;
+    583					;
+    584					     ?debug  L 166
+*Warning* ..\obj\loader.asm(583) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    585	0229  C7 06 0000e 0000		     mov     word ptr DGROUP:_boot_dtime,0
+    586					;
+    587					;		      boot_down_flag = 1;
+    588					;
+    589					     ?debug  L 167
+*Warning* ..\obj\loader.asm(588) ?DEBUG	ignored	when /ZI or /ZD	enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 13
+..\obj\loader.asm
+
+
+
+    590	022F  C6 06 0000e 01		     mov     byte ptr DGROUP:_boot_down_flag,1
+    591					;
+    592					;
+    593					;		      //写 flash
+    594					;		      CurrPackage = boot_dtemp[5];
+    595					;
+    596					     ?debug  L 170
+*Warning* ..\obj\loader.asm(595) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    597	0234  A0 0005e			     mov     al,byte ptr DGROUP:_boot_dtemp+5
+    598	0237  B4 00			     mov     ah,0
+    599	0239  89 46 FC			     mov     word ptr [bp-4],ax
+    600					;
+    601					;		      CurrPackage <<= 8;//*256
+    602					;
+    603					     ?debug  L 171
+*Warning* ..\obj\loader.asm(602) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    604	023C  B1 08			     mov     cl,8
+    605	023E  D3 66 FC			     shl     word ptr [bp-4],cl
+    606					;
+    607					;		      CurrPackage += boot_dtemp[6];
+    608					;
+    609					     ?debug  L 172
+*Warning* ..\obj\loader.asm(608) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    610	0241  A0 0006e			     mov     al,byte ptr DGROUP:_boot_dtemp+6
+    611	0244  B4 00			     mov     ah,0
+    612	0246  01 46 FC			     add     word ptr [bp-4],ax
+    613					;
+    614					;		      padd = (INT32U)CurrPackage * 256;
+    615					;
+    616					     ?debug  L 173
+*Warning* ..\obj\loader.asm(615) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    617	0249  8B 46 FC			     mov     ax,word ptr [bp-4]
+    618	024C  33 D2			     xor     dx,dx
+    619	024E  B1 08			     mov     cl,8
+    620	0250  9A 00000000se		     call    far ptr F_LXLSH@
+    621	0255  89 56 F8			     mov     word ptr [bp-8],dx
+    622	0258  89 46 F6			     mov     word ptr [bp-10],ax
+    623					;
+    624					;		      if (!(CurrPackage%16))	   //4096
+    625					;
+    626					     ?debug  L 174
+*Warning* ..\obj\loader.asm(625) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    627	025B  F7 46 FC 000F		     test    word ptr [bp-4],15
+    628	0260  75 17			     jne     short @4@450
+    629					;
+    630					;		       {
+    631					;			boot_w25x32writeenable();
+    632					;
+    633					     ?debug  L 176
+*Warning* ..\obj\loader.asm(632) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    634	0262  0E E8 00B4 90		     call    far ptr _boot_w25x32writeenable
+    635					;
+    636					;			boot_sectererase25x32(padd);
+    637					;
+    638					     ?debug  L 177
+*Warning* ..\obj\loader.asm(637) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    639	0267  FF 76 F8			     push    word ptr [bp-8]
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 14
+..\obj\loader.asm
+
+
+
+    640	026A  FF 76 F6			     push    word ptr [bp-10]
+    641	026D  0E E8 01CD 90		     call    far ptr _boot_sectererase25x32
+    642	0272  59			     pop     cx
+    643	0273  59			     pop     cx
+    644					;
+    645					;			boot_read25x32status();
+    646					;
+    647					     ?debug  L 178
+*Warning* ..\obj\loader.asm(646) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    648	0274  0E E8 00FC 90		     call    far ptr _boot_read25x32status
+    649	0279			     @4@450:
+    650					;
+    651					;			//boot_delay(10);
+    652					;		       }
+    653					;		      boot_w25x32writeenable();
+    654					;
+    655					     ?debug  L 181
+*Warning* ..\obj\loader.asm(654) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    656	0279  0E E8 009D 90		     call    far ptr _boot_w25x32writeenable
+    657					;
+    658					;		      boot_programpage25x32(padd, boot_dtemp + 7, 256);
+    659					;
+    660					     ?debug  L 182
+*Warning* ..\obj\loader.asm(659) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    661	027E  B8 0100			     mov     ax,256
+    662	0281  50			     push    ax
+    663	0282  1E			     push    ds
+    664	0283  B8 0007e			     mov     ax,offset DGROUP:_boot_dtemp+7
+    665	0286  50			     push    ax
+    666	0287  FF 76 F8			     push    word ptr [bp-8]
+    667	028A  FF 76 F6			     push    word ptr [bp-10]
+    668	028D  0E E8 0123 90		     call    far ptr _boot_programpage25x32
+    669	0292  83 C4 0A			     add     sp,10
+    670					;
+    671					;		      boot_w25x32writedisable();
+    672					;
+    673					     ?debug  L 183
+*Warning* ..\obj\loader.asm(672) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    674	0295  0E E8 00AE 90		     call    far ptr _boot_w25x32writedisable
+    675					;
+    676					;		      //boot_delay(10);
+    677					;
+    678					;		      boot_dtemp[4] = BOOT_REPLY;
+    679					;
+    680					     ?debug  L 186
+*Warning* ..\obj\loader.asm(679) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    681	029A  C6 06 0004e 02		     mov     byte ptr DGROUP:_boot_dtemp+4,2
+    682					;
+    683					;		      crc = 0;
+    684					;
+    685					     ?debug  L 187
+*Warning* ..\obj\loader.asm(684) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    686	029F  C6 46 FE 00		     mov     byte ptr [bp-2],0
+    687					;
+    688					;		      for(i=1; i<(dtemp_pos - 1); i++)
+    689					;
+    690					     ?debug  L 188
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 15
+..\obj\loader.asm
+
+
+
+*Warning* ..\obj\loader.asm(689) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    691	02A3  C7 46 FA 0001		     mov     word ptr [bp-6],1
+    692	02A8  EB 0D			     jmp     short @4@534
+    693	02AA			     @4@478:
+    694					;
+    695					;			crc += boot_dtemp[i];
+    696					;
+    697					     ?debug  L 189
+*Warning* ..\obj\loader.asm(696) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    698	02AA  8B 5E FA			     mov     bx,word ptr [bp-6]
+    699	02AD  8A 87 0000e		     mov     al,byte ptr DGROUP:_boot_dtemp[bx]
+    700	02B1  00 46 FE			     add     byte ptr [bp-2],al
+    701					     ?debug  L 188
+*Warning* ..\obj\loader.asm(700) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    702	02B4  FF 46 FA			     inc     word ptr [bp-6]
+    703	02B7			     @4@534:
+    704	02B7  A1 0000e			     mov     ax,word ptr DGROUP:_dtemp_pos
+    705	02BA  48			     dec     ax
+    706	02BB  3B 46 FA			     cmp     ax,word ptr [bp-6]
+    707	02BE  77 EA			     ja	     short @4@478
+    708					;
+    709					;		      boot_dtemp[dtemp_pos - 1]	= crc;
+    710					;
+    711					     ?debug  L 190
+*Warning* ..\obj\loader.asm(710) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    712	02C0  8B 1E 0000e		     mov     bx,word ptr DGROUP:_dtemp_pos
+    713	02C4  4B			     dec     bx
+    714	02C5  8A 46 FE			     mov     al,byte ptr [bp-2]
+    715	02C8  88 87 0000e		     mov     byte ptr DGROUP:_boot_dtemp[bx],al
+    716					;
+    717					;		      for(i=0; i<dtemp_pos; i++)
+    718					;
+    719					     ?debug  L 191
+*Warning* ..\obj\loader.asm(718) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    720	02CC  C7 46 FA 0000		     mov     word ptr [bp-6],0
+    721	02D1  EB 1E			     jmp     short @4@702
+    722	02D3			     @4@590:
+    723	02D3  EB 00			     jmp     short @4@618
+    724	02D5			     @4@618:
+    725					;
+    726					;		       {
+    727					;			while((inportb(BOOT_UART0_TX_STATUS)&0x1)!=0x1);     //		    +
+    728				     等待发送保持器为空
+    729					;
+    730					     ?debug  L 193
+*Warning* ..\obj\loader.asm(728) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    731	02D5  BA FF80			     mov     dx,-128
+    732	02D8  EC			     in	     al,dx
+    733	02D9  B4 00			     mov     ah,0
+    734	02DB  25 0001			     and     ax,1
+    735	02DE  3D 0001			     cmp     ax,1
+    736	02E1  75 F2			     jne     short @4@618
+    737					;
+    738					;			outportb(BOOT_UART0_TX_DATA, boot_dtemp[i]);			    +
+    739				     //	发送字符
+    740					;
+    741					     ?debug  L 194
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 16
+..\obj\loader.asm
+
+
+
+*Warning* ..\obj\loader.asm(738) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    742	02E3  8B 5E FA			     mov     bx,word ptr [bp-6]
+    743	02E6  8A 87 0000e		     mov     al,byte ptr DGROUP:_boot_dtemp[bx]
+    744	02EA  BA FF81			     mov     dx,-127
+    745	02ED  EE			     out     dx,al
+    746					     ?debug  L 191
+*Warning* ..\obj\loader.asm(743) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    747	02EE  FF 46 FA			     inc     word ptr [bp-6]
+    748	02F1			     @4@702:
+    749	02F1  8B 46 FA			     mov     ax,word ptr [bp-6]
+    750	02F4  3B 06 0000e		     cmp     ax,word ptr DGROUP:_dtemp_pos
+    751	02F8  72 D9			     jb	     short @4@590
+    752	02FA			     @4@730:
+    753					;
+    754					;		       }
+    755					;		     }
+    756					;		    dtemp_valid	= 0;
+    757					;
+    758					     ?debug  L 197
+*Warning* ..\obj\loader.asm(755) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    759	02FA  C6 06 0000e 00		     mov     byte ptr DGROUP:_dtemp_valid,0
+    760					;
+    761					;		    dtemp_pos =	0;
+    762					;
+    763					     ?debug  L 198
+*Warning* ..\obj\loader.asm(760) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    764	02FF  C7 06 0000e 0000		     mov     word ptr DGROUP:_dtemp_pos,0
+    765	0305			     @4@758:
+    766					     ?debug  L 135
+*Warning* ..\obj\loader.asm(763) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    767	0305  BA FF82			     mov     dx,-126
+    768	0308  EC			     in	     al,dx
+    769	0309  B4 00			     mov     ah,0
+    770	030B  25 0010			     and     ax,16
+    771	030E  3D 0010			     cmp     ax,16
+    772	0311  75 03			     jne     @@2
+    773	0313  E9 FE6F			     jmp     @4@58
+    774	0316			     @@2:
+    775					;
+    776					;		  }
+    777					;		}
+    778					;	      }
+    779					;    }
+    780					;
+    781					     ?debug  L 202
+*Warning* ..\obj\loader.asm(778) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    782	0316  8B E5			     mov     sp,bp
+    783	0318  5D			     pop     bp
+    784	0319  CB			     ret
+    785					     ?debug  C E604706164640C02F6FF0001690A02FAFF000B43+
+*Warning* ..\obj\loader.asm(782) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    786					     ?debug  C 7572725061636B6167650A02FCFF000363726308+
+*Warning* ..\obj\loader.asm(783) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    787					     ?debug  C 02FEFF0009726563765F627974650802FFFF00
+*Warning* ..\obj\loader.asm(784) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    788					     ?debug  E
+*Warning* ..\obj\loader.asm(785) ?DEBUG	ignored	when /ZI or /ZD	enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 17
+..\obj\loader.asm
+
+
+
+    789					     ?debug  E
+*Warning* ..\obj\loader.asm(786) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    790	031A			     _Boot_comm_upgrade	     endp
+    791					;
+    792					;    void boot_w25x32writeenable(void)
+    793					;
+    794					     ?debug  L 219
+*Warning* ..\obj\loader.asm(791) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    795					     assume  cs:LOADER_TEXT
+    796	031A			     _boot_w25x32writeenable proc    far
+    797					     ?debug  B
+*Warning* ..\obj\loader.asm(794) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    798	031A  55			     push    bp
+    799	031B  8B EC			     mov     bp,sp
+    800					     ?debug  B
+*Warning* ..\obj\loader.asm(797) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    801					;
+    802					;    {
+    803					;		     disable();
+    804					;
+    805					     ?debug  L 221
+*Warning* ..\obj\loader.asm(802) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    806	031D  FA			     db	     250
+    807					;
+    808					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x20);    //sel spi controller
+    809					;
+    810					     ?debug  L 222
+*Warning* ..\obj\loader.asm(807) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    811	031E  BA FE80			     mov     dx,-384
+    812	0321  B0 20			     mov     al,32
+    813	0323  EE			     out     dx,al
+    814					;
+    815					;	 outportb(BOOT_SPCR, 0x50);		     //int disable, spi	enable,	ss=0, mstr =1
+    816					;
+    817					     ?debug  L 223
+*Warning* ..\obj\loader.asm(814) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    818	0324  BA FFB0			     mov     dx,-80
+    819	0327  B0 50			     mov     al,80
+    820	0329  EE			     out     dx,al
+    821					;
+    822					;
+    823					;	 outportb(BOOT_SPDR, 0x06);		     //write enable command
+    824					;
+    825					     ?debug  L 225
+*Warning* ..\obj\loader.asm(822) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    826	032A  BA FFB2			     mov     dx,-78
+    827	032D  B0 06			     mov     al,6
+    828	032F  EE			     out     dx,al
+    829					;
+    830					;	 inportb(BOOT_SPDR);
+    831					;
+    832					     ?debug  L 226
+*Warning* ..\obj\loader.asm(829) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    833	0330  BA FFB2			     mov     dx,-78
+    834	0333  EC			     in	     al,dx
+    835					;
+    836					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 18
+..\obj\loader.asm
+
+
+
+    837					;	 outportb(BOOT_SPCR, inportb(BOOT_SPCR)|0x70);	    //ss=1
+    838					;
+    839					     ?debug  L 228
+*Warning* ..\obj\loader.asm(836) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    840	0334  BA FFB0			     mov     dx,-80
+    841	0337  EC			     in	     al,dx
+    842	0338  0C 70			     or	     al,112
+    843	033A  BA FFB0			     mov     dx,-80
+    844	033D  EE			     out     dx,al
+    845					;
+    846					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x00);      //sel spi flash
+    847					;
+    848					     ?debug  L 229
+*Warning* ..\obj\loader.asm(845) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    849	033E  BA FE80			     mov     dx,-384
+    850	0341  B0 00			     mov     al,0
+    851	0343  EE			     out     dx,al
+    852					;
+    853					;		     enable();
+    854					;
+    855					     ?debug  L 230
+*Warning* ..\obj\loader.asm(852) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    856	0344  FB			     db	     251
+    857					;
+    858					;    }
+    859					;
+    860					     ?debug  L 231
+*Warning* ..\obj\loader.asm(857) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    861	0345  5D			     pop     bp
+    862	0346  CB			     ret
+    863					     ?debug  E
+*Warning* ..\obj\loader.asm(860) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    864					     ?debug  E
+*Warning* ..\obj\loader.asm(861) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    865	0347			     _boot_w25x32writeenable endp
+    866					;
+    867					;    void boot_w25x32writedisable(void)
+    868					;
+    869					     ?debug  L 233
+*Warning* ..\obj\loader.asm(866) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    870					     assume  cs:LOADER_TEXT
+    871	0347			     _boot_w25x32writedisable	     proc    far
+    872					     ?debug  B
+*Warning* ..\obj\loader.asm(869) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    873	0347  55			     push    bp
+    874	0348  8B EC			     mov     bp,sp
+    875					     ?debug  B
+*Warning* ..\obj\loader.asm(872) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    876					;
+    877					;    {
+    878					;		     disable();
+    879					;
+    880					     ?debug  L 235
+*Warning* ..\obj\loader.asm(877) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    881	034A  FA			     db	     250
+    882					;
+    883					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x20);    //sel spi controller
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 19
+..\obj\loader.asm
+
+
+
+    884					;
+    885					     ?debug  L 236
+*Warning* ..\obj\loader.asm(882) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    886	034B  BA FE80			     mov     dx,-384
+    887	034E  B0 20			     mov     al,32
+    888	0350  EE			     out     dx,al
+    889					;
+    890					;	 outportb(BOOT_SPCR, 0x50);		     //int enable, spi enable, ss=0, mstr =1
+    891					;
+    892					     ?debug  L 237
+*Warning* ..\obj\loader.asm(889) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    893	0351  BA FFB0			     mov     dx,-80
+    894	0354  B0 50			     mov     al,80
+    895	0356  EE			     out     dx,al
+    896					;
+    897					;
+    898					;	 outportb(BOOT_SPDR, 0x04);		     //write disable command
+    899					;
+    900					     ?debug  L 239
+*Warning* ..\obj\loader.asm(897) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    901	0357  BA FFB2			     mov     dx,-78
+    902	035A  B0 04			     mov     al,4
+    903	035C  EE			     out     dx,al
+    904					;
+    905					;	 inportb(BOOT_SPDR);
+    906					;
+    907					     ?debug  L 240
+*Warning* ..\obj\loader.asm(904) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    908	035D  BA FFB2			     mov     dx,-78
+    909	0360  EC			     in	     al,dx
+    910					;
+    911					;
+    912					;	 outportb(BOOT_SPCR, inportb(BOOT_SPCR)|0x70);	    //ss=1
+    913					;
+    914					     ?debug  L 242
+*Warning* ..\obj\loader.asm(911) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    915	0361  BA FFB0			     mov     dx,-80
+    916	0364  EC			     in	     al,dx
+    917	0365  0C 70			     or	     al,112
+    918	0367  BA FFB0			     mov     dx,-80
+    919	036A  EE			     out     dx,al
+    920					;
+    921					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x00);      //sel spi flash
+    922					;
+    923					     ?debug  L 243
+*Warning* ..\obj\loader.asm(920) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    924	036B  BA FE80			     mov     dx,-384
+    925	036E  B0 00			     mov     al,0
+    926	0370  EE			     out     dx,al
+    927					;
+    928					;		     enable();
+    929					;
+    930					     ?debug  L 244
+*Warning* ..\obj\loader.asm(927) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    931	0371  FB			     db	     251
+    932					;
+    933					;    }
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 20
+..\obj\loader.asm
+
+
+
+    934					;
+    935					     ?debug  L 245
+*Warning* ..\obj\loader.asm(932) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    936	0372  5D			     pop     bp
+    937	0373  CB			     ret
+    938					     ?debug  E
+*Warning* ..\obj\loader.asm(935) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    939					     ?debug  E
+*Warning* ..\obj\loader.asm(936) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    940	0374			     _boot_w25x32writedisable	     endp
+    941					;
+    942					;    void boot_read25x32status(void)
+    943					;
+    944					     ?debug  L 247
+*Warning* ..\obj\loader.asm(941) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    945					     assume  cs:LOADER_TEXT
+    946	0374			     _boot_read25x32status   proc    far
+    947					     ?debug  B
+*Warning* ..\obj\loader.asm(944) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    948	0374  55			     push    bp
+    949	0375  8B EC			     mov     bp,sp
+    950					     ?debug  B
+*Warning* ..\obj\loader.asm(947) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    951					;
+    952					;    {
+    953					;		     disable();
+    954					;
+    955					     ?debug  L 249
+*Warning* ..\obj\loader.asm(952) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    956	0377  FA			     db	     250
+    957					;
+    958					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x20);    //sel spi controller
+    959					;
+    960					     ?debug  L 250
+*Warning* ..\obj\loader.asm(957) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    961	0378  BA FE80			     mov     dx,-384
+    962	037B  B0 20			     mov     al,32
+    963	037D  EE			     out     dx,al
+    964					;
+    965					;	 outportb(BOOT_SPCR, 0x50);		     //int disable, spi	enable,	ss=0, mstr =1
+    966					;
+    967					     ?debug  L 251
+*Warning* ..\obj\loader.asm(964) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    968	037E  BA FFB0			     mov     dx,-80
+    969	0381  B0 50			     mov     al,80
+    970	0383  EE			     out     dx,al
+    971					;
+    972					;
+    973					;	 outportb(BOOT_SPDR, 0x05);		     //read status register command
+    974					;
+    975					     ?debug  L 253
+*Warning* ..\obj\loader.asm(972) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    976	0384  BA FFB2			     mov     dx,-78
+    977	0387  B0 05			     mov     al,5
+    978	0389  EE			     out     dx,al
+    979					;
+    980					;	 inportb(BOOT_SPDR);
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 21
+..\obj\loader.asm
+
+
+
+    981					;
+    982					     ?debug  L 254
+*Warning* ..\obj\loader.asm(979) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    983	038A  BA FFB2			     mov     dx,-78
+    984	038D  EC			     in	     al,dx
+    985	038E  EB 00			     jmp     short @7@58
+    986	0390			     @7@58:
+    987					;
+    988					;
+    989					;	 outportb(BOOT_SPDR, 0x00);
+    990					;	 while(inportb(BOOT_SPDR)&0x01==0x01) {	      // read status register
+    991					;		outportb(BOOT_SPDR, 0x00);
+    992					;
+    993					     ?debug  L 258
+*Warning* ..\obj\loader.asm(990) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    994	0390  BA FFB2			     mov     dx,-78
+    995	0393  B0 00			     mov     al,0
+    996	0395  EE			     out     dx,al
+    997					     ?debug  L 257
+*Warning* ..\obj\loader.asm(994) ?DEBUG	ignored	when /ZI or /ZD	enabled
+    998	0396  BA FFB2			     mov     dx,-78
+    999	0399  EC			     in	     al,dx
+   1000	039A  B4 00			     mov     ah,0
+   1001	039C  A9 0001			     test    ax,1
+   1002	039F  75 EF			     jne     short @7@58
+   1003					;
+   1004					;	   }
+   1005					;
+   1006					;	 outportb(BOOT_SPCR, inportb(BOOT_SPCR)|0x70);	   //ss=1
+   1007					;
+   1008					     ?debug  L 261
+*Warning* ..\obj\loader.asm(1005) ?DEBUG ignored when /ZI or /ZD enabled
+   1009	03A1  BA FFB0			     mov     dx,-80
+   1010	03A4  EC			     in	     al,dx
+   1011	03A5  0C 70			     or	     al,112
+   1012	03A7  BA FFB0			     mov     dx,-80
+   1013	03AA  EE			     out     dx,al
+   1014					;
+   1015					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x00);     //sel spi	flash
+   1016					;
+   1017					     ?debug  L 262
+*Warning* ..\obj\loader.asm(1014) ?DEBUG ignored when /ZI or /ZD enabled
+   1018	03AB  BA FE80			     mov     dx,-384
+   1019	03AE  B0 00			     mov     al,0
+   1020	03B0  EE			     out     dx,al
+   1021					;
+   1022					;		     enable();
+   1023					;
+   1024					     ?debug  L 263
+*Warning* ..\obj\loader.asm(1021) ?DEBUG ignored when /ZI or /ZD enabled
+   1025	03B1  FB			     db	     251
+   1026					;
+   1027					;    }
+   1028					;
+   1029					     ?debug  L 264
+*Warning* ..\obj\loader.asm(1026) ?DEBUG ignored when /ZI or /ZD enabled
+   1030	03B2  5D			     pop     bp
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 22
+..\obj\loader.asm
+
+
+
+   1031	03B3  CB			     ret
+   1032					     ?debug  E
+*Warning* ..\obj\loader.asm(1029) ?DEBUG ignored when /ZI or /ZD enabled
+   1033					     ?debug  E
+*Warning* ..\obj\loader.asm(1030) ?DEBUG ignored when /ZI or /ZD enabled
+   1034	03B4			     _boot_read25x32status   endp
+   1035					;
+   1036					;    void boot_programpage25x32(INT32U paddr, INT8U *data, INT16U len)
+   1037					;
+   1038					     ?debug  L 266
+*Warning* ..\obj\loader.asm(1035) ?DEBUG ignored when /ZI or /ZD enabled
+   1039					     assume  cs:LOADER_TEXT
+   1040	03B4			     _boot_programpage25x32  proc    far
+   1041					     ?debug  B
+*Warning* ..\obj\loader.asm(1038) ?DEBUG ignored when /ZI or /ZD enabled
+   1042	03B4  55			     push    bp
+   1043	03B5  8B EC			     mov     bp,sp
+   1044	03B7  83 EC 02			     sub     sp,2
+   1045					     ?debug  C E319000400160800
+*Warning* ..\obj\loader.asm(1042) ?DEBUG ignored when /ZI or /ZD enabled
+   1046					     ?debug  C E6036C656E0A0A0E00000464617461190A0A0000+
+*Warning* ..\obj\loader.asm(1043) ?DEBUG ignored when /ZI or /ZD enabled
+   1047					     ?debug  C 0570616464720C0A060000
+*Warning* ..\obj\loader.asm(1044) ?DEBUG ignored when /ZI or /ZD enabled
+   1048					     ?debug  B
+*Warning* ..\obj\loader.asm(1045) ?DEBUG ignored when /ZI or /ZD enabled
+   1049					;
+   1050					;    {
+   1051					;	 INT16U	i;
+   1052					;
+   1053					;	 //xtm_printf("inportb(SPSR)&0x40 = 0x%X\n", (INT16U)(inportb(SPSR)&0x40));
+   1054					;	 boot_wait_till_ready();
+   1055					;
+   1056					     ?debug  L 271
+*Warning* ..\obj\loader.asm(1053) ?DEBUG ignored when /ZI or /ZD enabled
+   1057	03BA  0E E8 00DD 90		     call    far ptr _boot_wait_till_ready
+   1058					;
+   1059					;
+   1060					;	 disable();
+   1061					;
+   1062					     ?debug  L 273
+*Warning* ..\obj\loader.asm(1059) ?DEBUG ignored when /ZI or /ZD enabled
+   1063	03BF  FA			     db	     250
+   1064					;
+   1065					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x20);    //sel spi controller
+   1066					;
+   1067					     ?debug  L 274
+*Warning* ..\obj\loader.asm(1064) ?DEBUG ignored when /ZI or /ZD enabled
+   1068	03C0  BA FE80			     mov     dx,-384
+   1069	03C3  B0 20			     mov     al,32
+   1070	03C5  EE			     out     dx,al
+   1071					;
+   1072					;	 outportb(BOOT_SPCR, 0x50);		     //int disable, spi	enable,	ss=0, mstr =1
+   1073					;
+   1074					     ?debug  L 275
+*Warning* ..\obj\loader.asm(1071) ?DEBUG ignored when /ZI or /ZD enabled
+   1075	03C6  BA FFB0			     mov     dx,-80
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 23
+..\obj\loader.asm
+
+
+
+   1076	03C9  B0 50			     mov     al,80
+   1077	03CB  EE			     out     dx,al
+   1078					;
+   1079					;	 outportb(BOOT_SPDR, 0x02);		     //program page 256	bytes data command
+   1080					;
+   1081					     ?debug  L 276
+*Warning* ..\obj\loader.asm(1078) ?DEBUG ignored when /ZI or /ZD enabled
+   1082	03CC  BA FFB2			     mov     dx,-78
+   1083	03CF  B0 02			     mov     al,2
+   1084	03D1  EE			     out     dx,al
+   1085					;
+   1086					;	 inportb(BOOT_SPDR);
+   1087					;
+   1088					     ?debug  L 277
+*Warning* ..\obj\loader.asm(1085) ?DEBUG ignored when /ZI or /ZD enabled
+   1089	03D2  BA FFB2			     mov     dx,-78
+   1090	03D5  EC			     in	     al,dx
+   1091					;
+   1092					;	 outportb(BOOT_SPDR, paddr>>16);	     //write A23-A16 Address
+   1093					;
+   1094					     ?debug  L 278
+*Warning* ..\obj\loader.asm(1091) ?DEBUG ignored when /ZI or /ZD enabled
+   1095	03D6  8B 46 08			     mov     ax,word ptr [bp+8]
+   1096	03D9  BA FFB2			     mov     dx,-78
+   1097	03DC  EE			     out     dx,al
+   1098					;
+   1099					;	 inportb(BOOT_SPDR);
+   1100					;
+   1101					     ?debug  L 279
+*Warning* ..\obj\loader.asm(1098) ?DEBUG ignored when /ZI or /ZD enabled
+   1102	03DD  BA FFB2			     mov     dx,-78
+   1103	03E0  EC			     in	     al,dx
+   1104					;
+   1105					;	 outportb(BOOT_SPDR, paddr>>8);		     //write A15-A8 Address
+   1106					;
+   1107					     ?debug  L 280
+*Warning* ..\obj\loader.asm(1104) ?DEBUG ignored when /ZI or /ZD enabled
+   1108	03E1  8B 56 08			     mov     dx,word ptr [bp+8]
+   1109	03E4  8B 46 06			     mov     ax,word ptr [bp+6]
+   1110	03E7  B1 08			     mov     cl,8
+   1111	03E9  9A 00000000se		     call    far ptr F_LXURSH@
+   1112	03EE  BA FFB2			     mov     dx,-78
+   1113	03F1  EE			     out     dx,al
+   1114					;
+   1115					;	 inportb(BOOT_SPDR);
+   1116					;
+   1117					     ?debug  L 281
+*Warning* ..\obj\loader.asm(1114) ?DEBUG ignored when /ZI or /ZD enabled
+   1118	03F2  BA FFB2			     mov     dx,-78
+   1119	03F5  EC			     in	     al,dx
+   1120					;
+   1121					;	 outportb(BOOT_SPDR, paddr);		     //write A7-A0 address
+   1122					;
+   1123					     ?debug  L 282
+*Warning* ..\obj\loader.asm(1120) ?DEBUG ignored when /ZI or /ZD enabled
+   1124	03F6  BA FFB2			     mov     dx,-78
+   1125	03F9  8A 46 06			     mov     al,byte ptr [bp+6]
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 24
+..\obj\loader.asm
+
+
+
+   1126	03FC  EE			     out     dx,al
+   1127					;
+   1128					;	 inportb(BOOT_SPDR);
+   1129					;
+   1130					     ?debug  L 283
+*Warning* ..\obj\loader.asm(1127) ?DEBUG ignored when /ZI or /ZD enabled
+   1131	03FD  BA FFB2			     mov     dx,-78
+   1132	0400  EC			     in	     al,dx
+   1133					;
+   1134					;
+   1135					;	 for(i=0;i<len;i++){
+   1136					;
+   1137					     ?debug  L 285
+*Warning* ..\obj\loader.asm(1134) ?DEBUG ignored when /ZI or /ZD enabled
+   1138	0401  C7 46 FE 0000		     mov     word ptr [bp-2],0
+   1139	0406  EB 14			     jmp     short @8@114
+   1140	0408			     @8@58:
+   1141					;
+   1142					;    //		     i++;
+   1143					;    //		     i--;
+   1144					;	     outportb(BOOT_SPDR, *data++);		   //write dummy data
+   1145					;
+   1146					     ?debug  L 288
+*Warning* ..\obj\loader.asm(1143) ?DEBUG ignored when /ZI or /ZD enabled
+   1147	0408  C4 5E 0A			     les     bx,dword ptr [bp+10]
+   1148	040B  FF 46 0A			     inc     word ptr [bp+10]
+   1149	040E  26: 8A 07			     mov     al,byte ptr es:[bx]
+   1150	0411  BA FFB2			     mov     dx,-78
+   1151	0414  EE			     out     dx,al
+   1152					;
+   1153					;	     inportb(BOOT_SPDR);		     //read chip data
+   1154					;
+   1155					     ?debug  L 289
+*Warning* ..\obj\loader.asm(1152) ?DEBUG ignored when /ZI or /ZD enabled
+   1156	0415  BA FFB2			     mov     dx,-78
+   1157	0418  EC			     in	     al,dx
+   1158					     ?debug  L 285
+*Warning* ..\obj\loader.asm(1155) ?DEBUG ignored when /ZI or /ZD enabled
+   1159	0419  FF 46 FE			     inc     word ptr [bp-2]
+   1160	041C			     @8@114:
+   1161	041C  8B 46 FE			     mov     ax,word ptr [bp-2]
+   1162	041F  3B 46 0E			     cmp     ax,word ptr [bp+14]
+   1163	0422  72 E4			     jb	     short @8@58
+   1164					;
+   1165					;	  }
+   1166					;	 outportb(BOOT_SPCR, inportb(BOOT_SPCR)|0x70);	    //ss=1
+   1167					;
+   1168					     ?debug  L 291
+*Warning* ..\obj\loader.asm(1165) ?DEBUG ignored when /ZI or /ZD enabled
+   1169	0424  BA FFB0			     mov     dx,-80
+   1170	0427  EC			     in	     al,dx
+   1171	0428  0C 70			     or	     al,112
+   1172	042A  BA FFB0			     mov     dx,-80
+   1173	042D  EE			     out     dx,al
+   1174					;
+   1175					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x00);      //sel spi flash
+   1176					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 25
+..\obj\loader.asm
+
+
+
+   1177					     ?debug  L 292
+*Warning* ..\obj\loader.asm(1174) ?DEBUG ignored when /ZI or /ZD enabled
+   1178	042E  BA FE80			     mov     dx,-384
+   1179	0431  B0 00			     mov     al,0
+   1180	0433  EE			     out     dx,al
+   1181					;
+   1182					;		     enable();
+   1183					;
+   1184					     ?debug  L 293
+*Warning* ..\obj\loader.asm(1181) ?DEBUG ignored when /ZI or /ZD enabled
+   1185	0434  FB			     db	     251
+   1186					;
+   1187					;	 boot_wait_till_ready();
+   1188					;
+   1189					     ?debug  L 294
+*Warning* ..\obj\loader.asm(1186) ?DEBUG ignored when /ZI or /ZD enabled
+   1190	0435  0E E8 0062 90		     call    far ptr _boot_wait_till_ready
+   1191					;
+   1192					;    }
+   1193					;
+   1194					     ?debug  L 295
+*Warning* ..\obj\loader.asm(1191) ?DEBUG ignored when /ZI or /ZD enabled
+   1195	043A  8B E5			     mov     sp,bp
+   1196	043C  5D			     pop     bp
+   1197	043D  CB			     ret
+   1198					     ?debug  C E601690A02FEFF000570616464720C0A06000004+
+*Warning* ..\obj\loader.asm(1195) ?DEBUG ignored when /ZI or /ZD enabled
+   1199					     ?debug  C 64617461190A0A0000036C656E0A0A0E0000
+*Warning* ..\obj\loader.asm(1196) ?DEBUG ignored when /ZI or /ZD enabled
+   1200					     ?debug  E
+*Warning* ..\obj\loader.asm(1197) ?DEBUG ignored when /ZI or /ZD enabled
+   1201					     ?debug  E
+*Warning* ..\obj\loader.asm(1198) ?DEBUG ignored when /ZI or /ZD enabled
+   1202	043E			     _boot_programpage25x32  endp
+   1203					;
+   1204					;    void boot_sectererase25x32(INT32U paddr)	// erase 4k
+   1205					;
+   1206					     ?debug  L 298
+*Warning* ..\obj\loader.asm(1203) ?DEBUG ignored when /ZI or /ZD enabled
+   1207					     assume  cs:LOADER_TEXT
+   1208	043E			     _boot_sectererase25x32  proc    far
+   1209					     ?debug  B
+*Warning* ..\obj\loader.asm(1206) ?DEBUG ignored when /ZI or /ZD enabled
+   1210	043E  55			     push    bp
+   1211	043F  8B EC			     mov     bp,sp
+   1212					     ?debug  C E60570616464720C0A060000
+*Warning* ..\obj\loader.asm(1209) ?DEBUG ignored when /ZI or /ZD enabled
+   1213					     ?debug  B
+*Warning* ..\obj\loader.asm(1210) ?DEBUG ignored when /ZI or /ZD enabled
+   1214					;
+   1215					;    {
+   1216					;	 disable();
+   1217					;
+   1218					     ?debug  L 300
+*Warning* ..\obj\loader.asm(1215) ?DEBUG ignored when /ZI or /ZD enabled
+   1219	0441  FA			     db	     250
+   1220					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 26
+..\obj\loader.asm
+
+
+
+   1221					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x20);    //sel spi controller
+   1222					;
+   1223					     ?debug  L 301
+*Warning* ..\obj\loader.asm(1220) ?DEBUG ignored when /ZI or /ZD enabled
+   1224	0442  BA FE80			     mov     dx,-384
+   1225	0445  B0 20			     mov     al,32
+   1226	0447  EE			     out     dx,al
+   1227					;
+   1228					;	 outportb(BOOT_SPCR, 0x50);		     //int enable, spi enable, ss=0, mstr =1
+   1229					;
+   1230					     ?debug  L 302
+*Warning* ..\obj\loader.asm(1227) ?DEBUG ignored when /ZI or /ZD enabled
+   1231	0448  BA FFB0			     mov     dx,-80
+   1232	044B  B0 50			     mov     al,80
+   1233	044D  EE			     out     dx,al
+   1234					;
+   1235					;	 outportb(BOOT_SPDR, 0x20);		     //secter erase command
+   1236					;
+   1237					     ?debug  L 303
+*Warning* ..\obj\loader.asm(1234) ?DEBUG ignored when /ZI or /ZD enabled
+   1238	044E  BA FFB2			     mov     dx,-78
+   1239	0451  B0 20			     mov     al,32
+   1240	0453  EE			     out     dx,al
+   1241					;
+   1242					;	 inportb(BOOT_SPDR);
+   1243					;
+   1244					     ?debug  L 304
+*Warning* ..\obj\loader.asm(1241) ?DEBUG ignored when /ZI or /ZD enabled
+   1245	0454  BA FFB2			     mov     dx,-78
+   1246	0457  EC			     in	     al,dx
+   1247					;
+   1248					;	 outportb(BOOT_SPDR, paddr>>16);	     //write A23-A16 Address
+   1249					;
+   1250					     ?debug  L 305
+*Warning* ..\obj\loader.asm(1247) ?DEBUG ignored when /ZI or /ZD enabled
+   1251	0458  8B 46 08			     mov     ax,word ptr [bp+8]
+   1252	045B  BA FFB2			     mov     dx,-78
+   1253	045E  EE			     out     dx,al
+   1254					;
+   1255					;	 inportb(BOOT_SPDR);
+   1256					;
+   1257					     ?debug  L 306
+*Warning* ..\obj\loader.asm(1254) ?DEBUG ignored when /ZI or /ZD enabled
+   1258	045F  BA FFB2			     mov     dx,-78
+   1259	0462  EC			     in	     al,dx
+   1260					;
+   1261					;	 outportb(BOOT_SPDR, paddr>>8);		     //write A15-A8 Address
+   1262					;
+   1263					     ?debug  L 307
+*Warning* ..\obj\loader.asm(1260) ?DEBUG ignored when /ZI or /ZD enabled
+   1264	0463  8B 56 08			     mov     dx,word ptr [bp+8]
+   1265	0466  8B 46 06			     mov     ax,word ptr [bp+6]
+   1266	0469  B1 08			     mov     cl,8
+   1267	046B  9A 00000000se		     call    far ptr F_LXURSH@
+   1268	0470  BA FFB2			     mov     dx,-78
+   1269	0473  EE			     out     dx,al
+   1270					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 27
+..\obj\loader.asm
+
+
+
+   1271					;	 inportb(BOOT_SPDR);
+   1272					;
+   1273					     ?debug  L 308
+*Warning* ..\obj\loader.asm(1270) ?DEBUG ignored when /ZI or /ZD enabled
+   1274	0474  BA FFB2			     mov     dx,-78
+   1275	0477  EC			     in	     al,dx
+   1276					;
+   1277					;	 outportb(BOOT_SPDR, paddr);		     //write A7-A0 address
+   1278					;
+   1279					     ?debug  L 309
+*Warning* ..\obj\loader.asm(1276) ?DEBUG ignored when /ZI or /ZD enabled
+   1280	0478  BA FFB2			     mov     dx,-78
+   1281	047B  8A 46 06			     mov     al,byte ptr [bp+6]
+   1282	047E  EE			     out     dx,al
+   1283					;
+   1284					;	 inportb(BOOT_SPDR);
+   1285					;
+   1286					     ?debug  L 310
+*Warning* ..\obj\loader.asm(1283) ?DEBUG ignored when /ZI or /ZD enabled
+   1287	047F  BA FFB2			     mov     dx,-78
+   1288	0482  EC			     in	     al,dx
+   1289					;
+   1290					;
+   1291					;	 outportb(BOOT_SPCR, inportb(BOOT_SPCR)|0x70);	    //ss=1
+   1292					;
+   1293					     ?debug  L 312
+*Warning* ..\obj\loader.asm(1290) ?DEBUG ignored when /ZI or /ZD enabled
+   1294	0483  BA FFB0			     mov     dx,-80
+   1295	0486  EC			     in	     al,dx
+   1296	0487  0C 70			     or	     al,112
+   1297	0489  BA FFB0			     mov     dx,-80
+   1298	048C  EE			     out     dx,al
+   1299					;
+   1300					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x00);      //sel spi flash
+   1301					;
+   1302					     ?debug  L 313
+*Warning* ..\obj\loader.asm(1299) ?DEBUG ignored when /ZI or /ZD enabled
+   1303	048D  BA FE80			     mov     dx,-384
+   1304	0490  B0 00			     mov     al,0
+   1305	0492  EE			     out     dx,al
+   1306					;
+   1307					;		     enable();
+   1308					;
+   1309					     ?debug  L 314
+*Warning* ..\obj\loader.asm(1306) ?DEBUG ignored when /ZI or /ZD enabled
+   1310	0493  FB			     db	     251
+   1311					;
+   1312					;	 boot_wait_till_ready();
+   1313					;
+   1314					     ?debug  L 315
+*Warning* ..\obj\loader.asm(1311) ?DEBUG ignored when /ZI or /ZD enabled
+   1315	0494  0E E8 0003 90		     call    far ptr _boot_wait_till_ready
+   1316					;
+   1317					;    }
+   1318					;
+   1319					     ?debug  L 316
+*Warning* ..\obj\loader.asm(1316) ?DEBUG ignored when /ZI or /ZD enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 28
+..\obj\loader.asm
+
+
+
+   1320	0499  5D			     pop     bp
+   1321	049A  CB			     ret
+   1322					     ?debug  C E60570616464720C0A060000
+*Warning* ..\obj\loader.asm(1319) ?DEBUG ignored when /ZI or /ZD enabled
+   1323					     ?debug  E
+*Warning* ..\obj\loader.asm(1320) ?DEBUG ignored when /ZI or /ZD enabled
+   1324					     ?debug  E
+*Warning* ..\obj\loader.asm(1321) ?DEBUG ignored when /ZI or /ZD enabled
+   1325	049B			     _boot_sectererase25x32  endp
+   1326					;
+   1327					;    void boot_wait_till_ready(void)
+   1328					;
+   1329					     ?debug  L 318
+*Warning* ..\obj\loader.asm(1326) ?DEBUG ignored when /ZI or /ZD enabled
+   1330					     assume  cs:LOADER_TEXT
+   1331	049B			     _boot_wait_till_ready   proc    far
+   1332					     ?debug  B
+*Warning* ..\obj\loader.asm(1329) ?DEBUG ignored when /ZI or /ZD enabled
+   1333	049B  55			     push    bp
+   1334	049C  8B EC			     mov     bp,sp
+   1335	049E  83 EC 04			     sub     sp,4
+   1336					     ?debug  B
+*Warning* ..\obj\loader.asm(1333) ?DEBUG ignored when /ZI or /ZD enabled
+   1337					;
+   1338					;    {
+   1339					;	 INT16U	i;
+   1340					;	 INT8U tmp;
+   1341					;		     disable();
+   1342					;
+   1343					     ?debug  L 322
+*Warning* ..\obj\loader.asm(1340) ?DEBUG ignored when /ZI or /ZD enabled
+   1344	04A1  FA			     db	     250
+   1345					;
+   1346					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x20);    //sel spi controller
+   1347					;
+   1348					     ?debug  L 323
+*Warning* ..\obj\loader.asm(1345) ?DEBUG ignored when /ZI or /ZD enabled
+   1349	04A2  BA FE80			     mov     dx,-384
+   1350	04A5  B0 20			     mov     al,32
+   1351	04A7  EE			     out     dx,al
+   1352					;
+   1353					;	 outportb(BOOT_SPCR, 0x50);		     //int disable, spi	enable,	ss=0, mstr =1
+   1354					;
+   1355					     ?debug  L 324
+*Warning* ..\obj\loader.asm(1352) ?DEBUG ignored when /ZI or /ZD enabled
+   1356	04A8  BA FFB0			     mov     dx,-80
+   1357	04AB  B0 50			     mov     al,80
+   1358	04AD  EE			     out     dx,al
+   1359					;
+   1360					;
+   1361					;	 outportb(BOOT_SPDR, 0x05);		     //read status register command
+   1362					;
+   1363					     ?debug  L 326
+*Warning* ..\obj\loader.asm(1360) ?DEBUG ignored when /ZI or /ZD enabled
+   1364	04AE  BA FFB2			     mov     dx,-78
+   1365	04B1  B0 05			     mov     al,5
+   1366	04B3  EE			     out     dx,al
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 29
+..\obj\loader.asm
+
+
+
+   1367					;
+   1368					;	 inportb(BOOT_SPDR);
+   1369					;
+   1370					     ?debug  L 327
+*Warning* ..\obj\loader.asm(1367) ?DEBUG ignored when /ZI or /ZD enabled
+   1371	04B4  BA FFB2			     mov     dx,-78
+   1372	04B7  EC			     in	     al,dx
+   1373					;
+   1374					;	 tmp = 0x01;
+   1375					;
+   1376					     ?debug  L 328
+*Warning* ..\obj\loader.asm(1373) ?DEBUG ignored when /ZI or /ZD enabled
+   1377	04B8  C6 46 FD 01		     mov     byte ptr [bp-3],1
+   1378					;
+   1379					;
+   1380					;	 i = 0;
+   1381					;
+   1382					     ?debug  L 330
+*Warning* ..\obj\loader.asm(1379) ?DEBUG ignored when /ZI or /ZD enabled
+   1383	04BC  C7 46 FE 0000		     mov     word ptr [bp-2],0
+   1384	04C1  EB 19			     jmp     short @10@114
+   1385	04C3			     @10@58:
+   1386					;
+   1387					;	 while((tmp & 0x01) == 0x01)			     //write status register
+   1388					;	  {
+   1389					;	   outportb(BOOT_SPDR, 0x00);		       //write dummy Address
+   1390					;
+   1391					     ?debug  L 333
+*Warning* ..\obj\loader.asm(1388) ?DEBUG ignored when /ZI or /ZD enabled
+   1392	04C3  BA FFB2			     mov     dx,-78
+   1393	04C6  B0 00			     mov     al,0
+   1394	04C8  EE			     out     dx,al
+   1395					;
+   1396					;	   tmp = inportb(BOOT_SPDR);
+   1397					;
+   1398					     ?debug  L 334
+*Warning* ..\obj\loader.asm(1395) ?DEBUG ignored when /ZI or /ZD enabled
+   1399	04C9  BA FFB2			     mov     dx,-78
+   1400	04CC  EC			     in	     al,dx
+   1401	04CD  88 46 FD			     mov     byte ptr [bp-3],al
+   1402					;
+   1403					;	   i++;
+   1404					;
+   1405					     ?debug  L 335
+*Warning* ..\obj\loader.asm(1402) ?DEBUG ignored when /ZI or /ZD enabled
+   1406	04D0  FF 46 FE			     inc     word ptr [bp-2]
+   1407					;
+   1408					;	   if(i	> 30000)
+   1409					;
+   1410					     ?debug  L 336
+*Warning* ..\obj\loader.asm(1407) ?DEBUG ignored when /ZI or /ZD enabled
+   1411	04D3  81 7E FE 7530		     cmp     word ptr [bp-2],30000
+   1412	04D8  76 02			     jbe     short @10@114
+   1413					;
+   1414					;	    {
+   1415					;	     break;
+   1416					;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 30
+..\obj\loader.asm
+
+
+
+   1417					     ?debug  L 338
+*Warning* ..\obj\loader.asm(1414) ?DEBUG ignored when /ZI or /ZD enabled
+   1418	04DA  EB 0D			     jmp     short @10@142
+   1419	04DC			     @10@114:
+   1420					     ?debug  L 331
+*Warning* ..\obj\loader.asm(1417) ?DEBUG ignored when /ZI or /ZD enabled
+   1421	04DC  8A 46 FD			     mov     al,byte ptr [bp-3]
+   1422	04DF  B4 00			     mov     ah,0
+   1423	04E1  25 0001			     and     ax,1
+   1424	04E4  3D 0001			     cmp     ax,1
+   1425	04E7  74 DA			     je	     short @10@58
+   1426	04E9			     @10@142:
+   1427					;
+   1428					;	    }
+   1429					;	  }
+   1430					;
+   1431					;	 outportb(BOOT_SPCR, inportb(BOOT_SPCR)|0x70);	    //ss=1
+   1432					;
+   1433					     ?debug  L 342
+*Warning* ..\obj\loader.asm(1430) ?DEBUG ignored when /ZI or /ZD enabled
+   1434	04E9  BA FFB0			     mov     dx,-80
+   1435	04EC  EC			     in	     al,dx
+   1436	04ED  0C 70			     or	     al,112
+   1437	04EF  BA FFB0			     mov     dx,-80
+   1438	04F2  EE			     out     dx,al
+   1439					;
+   1440					;	 outportb(BOOT_BITBLK_CONTROL_REG, 0x00);      //sel spi flash
+   1441					;
+   1442					     ?debug  L 343
+*Warning* ..\obj\loader.asm(1439) ?DEBUG ignored when /ZI or /ZD enabled
+   1443	04F3  BA FE80			     mov     dx,-384
+   1444	04F6  B0 00			     mov     al,0
+   1445	04F8  EE			     out     dx,al
+   1446					;
+   1447					;		     enable();
+   1448					;
+   1449					     ?debug  L 344
+*Warning* ..\obj\loader.asm(1446) ?DEBUG ignored when /ZI or /ZD enabled
+   1450	04F9  FB			     db	     251
+   1451					;
+   1452					;
+   1453					;    }
+   1454					;
+   1455					     ?debug  L 346
+*Warning* ..\obj\loader.asm(1452) ?DEBUG ignored when /ZI or /ZD enabled
+   1456	04FA  8B E5			     mov     sp,bp
+   1457	04FC  5D			     pop     bp
+   1458	04FD  CB			     ret
+   1459					     ?debug  C E603746D700802FDFF0001690A02FEFF00
+*Warning* ..\obj\loader.asm(1456) ?DEBUG ignored when /ZI or /ZD enabled
+   1460					     ?debug  E
+*Warning* ..\obj\loader.asm(1457) ?DEBUG ignored when /ZI or /ZD enabled
+   1461					     ?debug  E
+*Warning* ..\obj\loader.asm(1458) ?DEBUG ignored when /ZI or /ZD enabled
+   1462	04FE			     _boot_wait_till_ready   endp
+   1463					;
+   1464					;    void boot_ClearWatchDog(void)
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 31
+..\obj\loader.asm
+
+
+
+   1465					;
+   1466					     ?debug  L 348
+*Warning* ..\obj\loader.asm(1463) ?DEBUG ignored when /ZI or /ZD enabled
+   1467					     assume  cs:LOADER_TEXT
+   1468	04FE			     _boot_ClearWatchDog     proc    far
+   1469					     ?debug  B
+*Warning* ..\obj\loader.asm(1466) ?DEBUG ignored when /ZI or /ZD enabled
+   1470	04FE  55			     push    bp
+   1471	04FF  8B EC			     mov     bp,sp
+   1472	0501  83 EC 02			     sub     sp,2
+   1473					     ?debug  B
+*Warning* ..\obj\loader.asm(1470) ?DEBUG ignored when /ZI or /ZD enabled
+   1474					;
+   1475					;    {
+   1476					;      INT8U tmp_data;
+   1477					;      if(boot_GpioWatchDogStarted)  //在GPIO检测线程中启动WatchDog
+   1478					;
+   1479					     ?debug  L 351
+*Warning* ..\obj\loader.asm(1476) ?DEBUG ignored when /ZI or /ZD enabled
+   1480	0504  80 3E 0000r 00		     cmp     byte ptr DGROUP:_boot_GpioWatchDogStarted,0
+   1481	0509  74 27			     je	     short @11@170
+   1482					;
+   1483					;	{
+   1484					;	 outportb(BOOT_GPIOA_OEN_DATA, inportb(BOOT_GPIOA_OEN_DATA) & 0xfb);		    +
+   1485				     //gpioa2为输出
+   1486					;
+   1487					     ?debug  L 353
+*Warning* ..\obj\loader.asm(1483) ?DEBUG ignored when /ZI or /ZD enabled
+   1488	050B  BA 02D1			     mov     dx,721
+   1489	050E  EC			     in	     al,dx
+   1490	050F  24 FB			     and     al,251
+   1491	0511  BA 02D1			     mov     dx,721
+   1492	0514  EE			     out     dx,al
+   1493					;
+   1494					;	 tmp_data = inportb(BOOT_GPIOA_OUT_DATA);
+   1495					;
+   1496					     ?debug  L 354
+*Warning* ..\obj\loader.asm(1492) ?DEBUG ignored when /ZI or /ZD enabled
+   1497	0515  BA 02D0			     mov     dx,720
+   1498	0518  EC			     in	     al,dx
+   1499	0519  88 46 FF			     mov     byte ptr [bp-1],al
+   1500					;
+   1501					;	 if(tmp_data & 0x04)
+   1502					;
+   1503					     ?debug  L 355
+*Warning* ..\obj\loader.asm(1499) ?DEBUG ignored when /ZI or /ZD enabled
+   1504	051C  F6 46 FF 04		     test    byte ptr [bp-1],4
+   1505	0520  74 07			     je	     short @11@114
+   1506					;
+   1507					;	   outportb(BOOT_GPIOA_OUT_DATA, tmp_data & 0xfb);
+   1508					;
+   1509					     ?debug  L 356
+*Warning* ..\obj\loader.asm(1505) ?DEBUG ignored when /ZI or /ZD enabled
+   1510	0522  8A 46 FF			     mov     al,byte ptr [bp-1]
+   1511	0525  24 FB			     and     al,251
+   1512	0527  EB 05			     jmp     short @11@142
+   1513	0529			     @11@114:
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 32
+..\obj\loader.asm
+
+
+
+   1514					;
+   1515					;	 else
+   1516					;	   outportb(BOOT_GPIOA_OUT_DATA, tmp_data | 0x04);
+   1517					;
+   1518					     ?debug  L 358
+*Warning* ..\obj\loader.asm(1514) ?DEBUG ignored when /ZI or /ZD enabled
+   1519	0529  8A 46 FF			     mov     al,byte ptr [bp-1]
+   1520	052C  0C 04			     or	     al,4
+   1521	052E			     @11@142:
+   1522	052E  BA 02D0			     mov     dx,720
+   1523	0531  EE			     out     dx,al
+   1524	0532			     @11@170:
+   1525					;
+   1526					;	}
+   1527					;    }
+   1528					;
+   1529					     ?debug  L 360
+*Warning* ..\obj\loader.asm(1525) ?DEBUG ignored when /ZI or /ZD enabled
+   1530	0532  8B E5			     mov     sp,bp
+   1531	0534  5D			     pop     bp
+   1532	0535  CB			     ret
+   1533					     ?debug  C E608746D705F646174610802FFFF00
+*Warning* ..\obj\loader.asm(1529) ?DEBUG ignored when /ZI or /ZD enabled
+   1534					     ?debug  E
+*Warning* ..\obj\loader.asm(1530) ?DEBUG ignored when /ZI or /ZD enabled
+   1535					     ?debug  E
+*Warning* ..\obj\loader.asm(1531) ?DEBUG ignored when /ZI or /ZD enabled
+   1536	0536			     _boot_ClearWatchDog     endp
+   1537					     ?debug  C E9
+*Warning* ..\obj\loader.asm(1533) ?DEBUG ignored when /ZI or /ZD enabled
+   1538					     ?debug  C FA00000000
+*Warning* ..\obj\loader.asm(1534) ?DEBUG ignored when /ZI or /ZD enabled
+   1539	0536			     LOADER_TEXT     ends
+   1540	0001			     _DATA   segment word public 'DATA'
+   1541	0001			     s@	     label   byte
+   1542	0001			     _DATA   ends
+   1543	0536			     LOADER_TEXT     segment byte public 'CODE'
+   1544	0536			     LOADER_TEXT     ends
+   1545					     extrn   F_LXURSH@:far
+   1546					     extrn   F_LXLSH@:far
+   1547					     extrn   F_LUDIV@:far
+   1548					     public  _loader
+   1549					     public  _boot_ClearWatchDog
+   1550					     public  _boot_GpioWatchDogStarted
+   1551					     public  _boot_wait_till_ready
+   1552					     public  _boot_programpage25x32
+   1553					     public  _boot_sectererase25x32
+   1554					     public  _boot_read25x32status
+   1555					     public  _boot_w25x32writedisable
+   1556					     public  _boot_w25x32writeenable
+   1557					     public  _Boot_comm_upgrade
+   1558					     public  _Boot_IdleInt
+   1559					     public  _Boot_InitComm
+   1560					     extrn   _boot_dtemp:byte
+   1561					     extrn   _dtemp_len:word
+   1562					     extrn   _dtemp_pos:word
+   1563					     extrn   _dtemp_valid:byte
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 33
+..\obj\loader.asm
+
+
+
+   1564					     extrn   _boot_down_flag:byte
+   1565					     extrn   _boot_dtime:word
+   1566				     _s@     equ     s@
+   1567					     ?debug  C EA010C
+*Warning* ..\obj\loader.asm(1563) ?DEBUG ignored when /ZI or /ZD enabled
+   1568					     ?debug  C E31A00000023040500
+*Warning* ..\obj\loader.asm(1564) ?DEBUG ignored when /ZI or /ZD enabled
+   1569					     ?debug  C EB09465F4C5855525348401A00
+*Warning* ..\obj\loader.asm(1565) ?DEBUG ignored when /ZI or /ZD enabled
+   1570					     ?debug  C EB08465F4C584C5348401A00
+*Warning* ..\obj\loader.asm(1566) ?DEBUG ignored when /ZI or /ZD enabled
+   1571					     ?debug  C EB08465F4C55444956401A00
+*Warning* ..\obj\loader.asm(1567) ?DEBUG ignored when /ZI or /ZD enabled
+   1572					     ?debug  C E31B00000023010400
+*Warning* ..\obj\loader.asm(1568) ?DEBUG ignored when /ZI or /ZD enabled
+   1573					     ?debug  C EC075F6C6F616465721B1800
+*Warning* ..\obj\loader.asm(1569) ?DEBUG ignored when /ZI or /ZD enabled
+   1574					     ?debug  C E31C00000023010400
+*Warning* ..\obj\loader.asm(1570) ?DEBUG ignored when /ZI or /ZD enabled
+   1575					     ?debug  C EC135F626F6F745F436C6561725761746368446F+
+*Warning* ..\obj\loader.asm(1571) ?DEBUG ignored when /ZI or /ZD enabled
+   1576					     ?debug  C 671C1800
+*Warning* ..\obj\loader.asm(1572) ?DEBUG ignored when /ZI or /ZD enabled
+   1577					     ?debug  C EC195F626F6F745F4770696F5761746368446F67+
+*Warning* ..\obj\loader.asm(1573) ?DEBUG ignored when /ZI or /ZD enabled
+   1578					     ?debug  C 53746172746564080000
+*Warning* ..\obj\loader.asm(1574) ?DEBUG ignored when /ZI or /ZD enabled
+   1579					     ?debug  C E31D00000023010400
+*Warning* ..\obj\loader.asm(1575) ?DEBUG ignored when /ZI or /ZD enabled
+   1580					     ?debug  C EC155F626F6F745F776169745F74696C6C5F7265+
+*Warning* ..\obj\loader.asm(1576) ?DEBUG ignored when /ZI or /ZD enabled
+   1581					     ?debug  C 6164791D1800
+*Warning* ..\obj\loader.asm(1577) ?DEBUG ignored when /ZI or /ZD enabled
+   1582					     ?debug  C E31E00000023010400
+*Warning* ..\obj\loader.asm(1578) ?DEBUG ignored when /ZI or /ZD enabled
+   1583					     ?debug  C EC165F626F6F745F70726F6772616D7061676532+
+*Warning* ..\obj\loader.asm(1579) ?DEBUG ignored when /ZI or /ZD enabled
+   1584					     ?debug  C 357833321E1800
+*Warning* ..\obj\loader.asm(1580) ?DEBUG ignored when /ZI or /ZD enabled
+   1585					     ?debug  C E31F00000023010400
+*Warning* ..\obj\loader.asm(1581) ?DEBUG ignored when /ZI or /ZD enabled
+   1586					     ?debug  C EC165F626F6F745F736563746572657261736532+
+*Warning* ..\obj\loader.asm(1582) ?DEBUG ignored when /ZI or /ZD enabled
+   1587					     ?debug  C 357833321F1800
+*Warning* ..\obj\loader.asm(1583) ?DEBUG ignored when /ZI or /ZD enabled
+   1588					     ?debug  C E32000000023010400
+*Warning* ..\obj\loader.asm(1584) ?DEBUG ignored when /ZI or /ZD enabled
+   1589					     ?debug  C EC155F626F6F745F726561643235783332737461+
+*Warning* ..\obj\loader.asm(1585) ?DEBUG ignored when /ZI or /ZD enabled
+   1590					     ?debug  C 747573201800
+*Warning* ..\obj\loader.asm(1586) ?DEBUG ignored when /ZI or /ZD enabled
+   1591					     ?debug  C E32100000023010400
+*Warning* ..\obj\loader.asm(1587) ?DEBUG ignored when /ZI or /ZD enabled
+   1592					     ?debug  C EC185F626F6F745F773235783332777269746564+
+*Warning* ..\obj\loader.asm(1588) ?DEBUG ignored when /ZI or /ZD enabled
+   1593					     ?debug  C 697361626C65211800
+*Warning* ..\obj\loader.asm(1589) ?DEBUG ignored when /ZI or /ZD enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 34
+..\obj\loader.asm
+
+
+
+   1594					     ?debug  C E32200000023010400
+*Warning* ..\obj\loader.asm(1590) ?DEBUG ignored when /ZI or /ZD enabled
+   1595					     ?debug  C EC175F626F6F745F773235783332777269746565+
+*Warning* ..\obj\loader.asm(1591) ?DEBUG ignored when /ZI or /ZD enabled
+   1596					     ?debug  C 6E61626C65221800
+*Warning* ..\obj\loader.asm(1592) ?DEBUG ignored when /ZI or /ZD enabled
+   1597					     ?debug  C E32300000023010400
+*Warning* ..\obj\loader.asm(1593) ?DEBUG ignored when /ZI or /ZD enabled
+   1598					     ?debug  C EC125F426F6F745F636F6D6D5F75706772616465+
+*Warning* ..\obj\loader.asm(1594) ?DEBUG ignored when /ZI or /ZD enabled
+   1599					     ?debug  C 231800
+*Warning* ..\obj\loader.asm(1595) ?DEBUG ignored when /ZI or /ZD enabled
+   1600					     ?debug  C E32400000023010700
+*Warning* ..\obj\loader.asm(1596) ?DEBUG ignored when /ZI or /ZD enabled
+   1601					     ?debug  C EC0D5F426F6F745F49646C65496E74249800
+*Warning* ..\obj\loader.asm(1597) ?DEBUG ignored when /ZI or /ZD enabled
+   1602					     ?debug  C E32500000023010400
+*Warning* ..\obj\loader.asm(1598) ?DEBUG ignored when /ZI or /ZD enabled
+   1603					     ?debug  C EC0E5F426F6F745F496E6974436F6D6D251800
+*Warning* ..\obj\loader.asm(1599) ?DEBUG ignored when /ZI or /ZD enabled
+   1604					     ?debug  C E3260020011A08
+*Warning* ..\obj\loader.asm(1600) ?DEBUG ignored when /ZI or /ZD enabled
+   1605					     ?debug  C EB0B5F626F6F745F6474656D702600
+*Warning* ..\obj\loader.asm(1601) ?DEBUG ignored when /ZI or /ZD enabled
+   1606					     ?debug  C EB0A5F6474656D705F6C656E0A00
+*Warning* ..\obj\loader.asm(1602) ?DEBUG ignored when /ZI or /ZD enabled
+   1607					     ?debug  C EB0A5F6474656D705F706F730A00
+*Warning* ..\obj\loader.asm(1603) ?DEBUG ignored when /ZI or /ZD enabled
+   1608					     ?debug  C EB0C5F6474656D705F76616C69640800
+*Warning* ..\obj\loader.asm(1604) ?DEBUG ignored when /ZI or /ZD enabled
+   1609					     ?debug  C EB0F5F626F6F745F646F776E5F666C61670800
+*Warning* ..\obj\loader.asm(1605) ?DEBUG ignored when /ZI or /ZD enabled
+   1610					     ?debug  C EB0B5F626F6F745F6474696D650A00
+*Warning* ..\obj\loader.asm(1606) ?DEBUG ignored when /ZI or /ZD enabled
+   1611					     ?debug  C E606494E543332550C060006494E543136550A06+
+*Warning* ..\obj\loader.asm(1607) ?DEBUG ignored when /ZI or /ZD enabled
+   1612					     ?debug  C 0005494E543855080600
+*Warning* ..\obj\loader.asm(1608) ?DEBUG ignored when /ZI or /ZD enabled
+   1613					     end
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 35
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "14/08/11"
+??FILENAME			  Text	 "loader  "
+??TIME				  Text	 "08:58:54"
+??VERSION			  Number 030A
+@10@114				  Near	 LOADER_TEXT:04DC
+@10@142				  Near	 LOADER_TEXT:04E9
+@10@58				  Near	 LOADER_TEXT:04C3
+@11@114				  Near	 LOADER_TEXT:0529
+@11@142				  Near	 LOADER_TEXT:052E
+@11@170				  Near	 LOADER_TEXT:0532
+@1@114				  Near	 LOADER_TEXT:0073
+@1@170				  Near	 LOADER_TEXT:00AB
+@1@198				  Near	 LOADER_TEXT:00AD
+@1@282				  Near	 LOADER_TEXT:00D1
+@1@338				  Near	 LOADER_TEXT:00DF
+@1@394				  Near	 LOADER_TEXT:00EF
+@1@450				  Near	 LOADER_TEXT:00F9
+@1@478				  Near	 LOADER_TEXT:00FB
+@1@58				  Near	 LOADER_TEXT:005E
+@4@142				  Near	 LOADER_TEXT:01B8
+@4@170				  Near	 LOADER_TEXT:01BB
+@4@226				  Near	 LOADER_TEXT:01E8
+@4@282				  Near	 LOADER_TEXT:0202
+@4@338				  Near	 LOADER_TEXT:020F
+@4@450				  Near	 LOADER_TEXT:0279
+@4@478				  Near	 LOADER_TEXT:02AA
+@4@534				  Near	 LOADER_TEXT:02B7
+@4@58				  Near	 LOADER_TEXT:0185
+@4@590				  Near	 LOADER_TEXT:02D3
+@4@618				  Near	 LOADER_TEXT:02D5
+@4@702				  Near	 LOADER_TEXT:02F1
+@4@730				  Near	 LOADER_TEXT:02FA
+@4@758				  Near	 LOADER_TEXT:0305
+@7@58				  Near	 LOADER_TEXT:0390
+@8@114				  Near	 LOADER_TEXT:041C
+@8@58				  Near	 LOADER_TEXT:0408
+@@0				  Near	 LOADER_TEXT:01F7
+@@1				  Near	 LOADER_TEXT:0229
+@@2				  Near	 LOADER_TEXT:0316
+@CPU				  Text	 0101H
+@CURSEG				  Text	 LOADER_TEXT
+@FILENAME			  Text	 LOADER
+@WORDSIZE			  Text	 2
+B@				  Byte	 _BSS:0000
+B@W				  Word	 _BSS:0000
+D@				  Byte	 _DATA:0000
+D@W				  Word	 _DATA:0000
+F_LUDIV@ (F_LUDIV@)		  Far	 ----:---- Extern
+F_LXLSH@ (F_LXLSH@)		  Far	 ----:---- Extern
+F_LXURSH@ (F_LXURSH@)		  Far	 ----:---- Extern
+S@				  Byte	 _DATA:0001
+STKSIZE				  Text	 1000H
+_BOOT_CLEARWATCHDOG	       +  Far	 LOADER_TEXT:04FE
+(_boot_ClearWatchDog)
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 36
+Symbol Table
+
+
+
+_BOOT_COMM_UPGRADE	       +  Far	 LOADER_TEXT:017C
+(_Boot_comm_upgrade)
+_BOOT_DOWN_FLAG		       +  Byte	 ----:---- Extern
+(_boot_down_flag)
+_BOOT_DTEMP (_boot_dtemp)	  Byte	 ----:---- Extern
+_BOOT_DTIME (_boot_dtime)	  Word	 ----:---- Extern
+_BOOT_GPIOWATCHDOGSTARTED      +  Byte	 _DATA:0000
+(_boot_GpioWatchDogStarted)
+_BOOT_IDLEINT (_Boot_IdleInt)	  Far	 LOADER_TEXT:015C
+_BOOT_INITCOMM (_Boot_InitComm)	  Far	 LOADER_TEXT:00FF
+_BOOT_PROGRAMPAGE25X32	       +  Far	 LOADER_TEXT:03B4
+(_boot_programpage25x32)
+_BOOT_READ25X32STATUS	       +  Far	 LOADER_TEXT:0374
+(_boot_read25x32status)
+_BOOT_SECTERERASE25X32	       +  Far	 LOADER_TEXT:043E
+(_boot_sectererase25x32)
+_BOOT_W25X32WRITEDISABLE       +  Far	 LOADER_TEXT:0347
+(_boot_w25x32writedisable)
+_BOOT_W25X32WRITEENABLE	       +  Far	 LOADER_TEXT:031A
+(_boot_w25x32writeenable)
+_BOOT_WAIT_TILL_READY	       +  Far	 LOADER_TEXT:049B
+(_boot_wait_till_ready)
+_DTEMP_LEN (_dtemp_len)		  Word	 ----:---- Extern
+_DTEMP_POS (_dtemp_pos)		  Word	 ----:---- Extern
+_DTEMP_VALID (_dtemp_valid)	  Byte	 ----:---- Extern
+_LOADER	(_loader)		  Far	 LOADER_TEXT:0000
+_S@				  Alias	 S@
+__L__				  Text
+
+Macro Name
+
+$COMM
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _BSS				  16  0000 Word	  Public  BSS
+  _DATA				  16  0001 Word	  Public  DATA
+LOADER_TEXT			  16  0536 Byte	  Public  CODE
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 37
+Error Summary
+
+
+
+*Warning* ..\obj\loader.asm(15)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(16)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(17)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(18)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(19)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(20)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(21)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(39)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(43)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(46)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(50)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(59)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(78)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(83)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(88)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(99)	?DEBUG ignored when /ZI	or /ZD enabled
+*Warning* ..\obj\loader.asm(110) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(115) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(120) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(125) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(132) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(140) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(153) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(165) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(172) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(179) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(184) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(194) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(204) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(213) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(223) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(231) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(236) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(242) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(248) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(254) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(263) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(267) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(268) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(269) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(270) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(271) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(272) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(277) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(280) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(284) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(285) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(286) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(287) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(295) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(316) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(325) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(335) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(344) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(349) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(355) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(359) ?DEBUG	ignored	when /ZI or /ZD	enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 38
+Error Summary
+
+
+
+*Warning* ..\obj\loader.asm(360) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(361) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(362) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(363) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(364) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(369) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(372) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(385) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(390) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(397) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(408) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(409) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(414) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(417) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(421) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(435) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(440) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(447) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(454) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(461) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(466) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(471) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(478) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(485) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(493) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(500) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(505) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(512) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(519) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(525) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(534) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(545) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(550) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(557) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(561) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(571) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(583) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(588) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(595) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(602) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(608) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(615) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(625) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(632) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(637) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(646) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(654) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(659) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(672) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(679) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(684) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(689) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(696) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(700) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(710) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(718) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(728) ?DEBUG	ignored	when /ZI or /ZD	enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 39
+Error Summary
+
+
+
+*Warning* ..\obj\loader.asm(738) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(743) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(755) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(760) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(763) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(778) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(782) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(783) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(784) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(785) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(786) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(791) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(794) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(797) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(802) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(807) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(814) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(822) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(829) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(836) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(845) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(852) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(857) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(860) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(861) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(866) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(869) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(872) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(877) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(882) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(889) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(897) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(904) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(911) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(920) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(927) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(932) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(935) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(936) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(941) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(944) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(947) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(952) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(957) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(964) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(972) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(979) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(990) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(994) ?DEBUG	ignored	when /ZI or /ZD	enabled
+*Warning* ..\obj\loader.asm(1005) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1014) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1021) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1026) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1029) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1030) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1035) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1038) ?DEBUG ignored when /ZI or /ZD enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 40
+Error Summary
+
+
+
+*Warning* ..\obj\loader.asm(1042) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1043) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1044) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1045) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1053) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1059) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1064) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1071) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1078) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1085) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1091) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1098) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1104) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1114) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1120) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1127) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1134) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1143) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1152) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1155) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1165) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1174) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1181) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1186) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1191) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1195) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1196) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1197) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1198) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1203) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1206) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1209) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1210) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1215) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1220) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1227) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1234) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1241) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1247) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1254) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1260) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1270) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1276) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1283) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1290) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1299) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1306) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1311) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1316) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1319) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1320) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1321) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1326) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1329) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1333) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1340) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1345) ?DEBUG ignored when /ZI or /ZD enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 41
+Error Summary
+
+
+
+*Warning* ..\obj\loader.asm(1352) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1360) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1367) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1373) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1379) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1388) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1395) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1402) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1407) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1414) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1417) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1430) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1439) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1446) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1452) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1456) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1457) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1458) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1463) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1466) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1470) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1476) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1483) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1492) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1499) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1505) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1514) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1525) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1529) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1530) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1531) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1533) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1534) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1563) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1564) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1565) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1566) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1567) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1568) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1569) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1570) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1571) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1572) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1573) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1574) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1575) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1576) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1577) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1578) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1579) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1580) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1581) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1582) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1583) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1584) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1585) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1586) ?DEBUG ignored when /ZI or /ZD enabled
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 42
+Error Summary
+
+
+
+*Warning* ..\obj\loader.asm(1587) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1588) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1589) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1590) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1591) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1592) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1593) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1594) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1595) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1596) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1597) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1598) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1599) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1600) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1601) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1602) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1603) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1604) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1605) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1606) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1607) ?DEBUG ignored when /ZI or /ZD enabled
+*Warning* ..\obj\loader.asm(1608) ?DEBUG ignored when /ZI or /ZD enabled
+

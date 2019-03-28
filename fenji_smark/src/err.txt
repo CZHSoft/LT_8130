@@ -1,0 +1,555 @@
+
+D:\SDK_8130\程序\fenji_smark\src>set path=..\..\tools\bc31\bin;..\..\tools\locate;..\..\tools\sed 
+
+D:\SDK_8130\程序\fenji_smark\src>copy MAKEFILE_SRC MAKEFILE 
+已复制         1 个文件。
+
+D:\SDK_8130\程序\fenji_smark\src>..\..\tools\bc31\bin\make
+Invalid keyboard code specified
+MAKE Version 3.6  Copyright (c) 1992 Borland International
+
+Available memory 15728640 bytes
+
+        BCC  lib_src\x_ft5316.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+lib_src\x_ft5316.c:
+Warning lib_src\x_ft5316.c 245: Parameter 'I2cAddress' is never used in function I2cWriteLcd
+Warning lib_src\x_ft5316.c 298: Parameter 'I2cAddress' is never used in function I2cReadLcd
+
+        Available memory 3979584
+        BCC  arch\cpu\m_init.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+arch\cpu\m_init.c:
+Warning arch\cpu\m_init.c 52: Constant is long in function main_init
+Warning arch\cpu\m_init.c 108: 'val' is declared but never used in function main_init
+Warning arch\cpu\m_init.c 188: Function should return a value in function xtm_memcopy
+
+        Available memory 3977208
+        BCC  xtm\x_ip.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_ip.c:
+Warning xtm\x_ip.c 212: Parameter 'recv_len' is never used in function Icmp_Deal
+Warning xtm\x_ip.c 240: 'data_len' is declared but never used in function Igmp_Deal
+Warning xtm\x_ip.c 240: Parameter 'recv_len' is never used in function Igmp_Deal
+Warning xtm\x_ip.c 562: Constant is long in function send_mac_packet
+Warning xtm\x_ip.c 562: Constant is long in function send_mac_packet
+Warning xtm\x_ip.c 575: Constant is long in function send_mac_packet
+Warning xtm\x_ip.c 575: Constant is long in function send_mac_packet
+Warning xtm\x_ip.c 618: Constant is long in function send_mac_video_packet
+Warning xtm\x_ip.c 618: Constant is long in function send_mac_video_packet
+Warning xtm\x_ip.c 715: Function should return a value in function RefreshArp_Table
+Warning xtm\x_ip.c 791: 'j' is declared but never used in function PrintArp_Table
+
+        Available memory 3939816
+        BCC  xtm\x_udp.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_udp.c:
+Warning xtm\x_udp.c 592: Constant is long in function RecvMessage_Func
+Warning xtm\x_udp.c 676: Parameter 'DestPort' is never used in function RecvReportStatus_Func
+Warning xtm\x_udp.c 676: Parameter 'length' is never used in function RecvReportStatus_Func
+Warning xtm\x_udp.c 716: 'sendlength' is assigned a value that is never used in function RecvQueryStatus_Func
+Warning xtm\x_udp.c 750: Parameter 'DestPort' is never used in function RecvAlarm_Func
+Warning xtm\x_udp.c 750: Parameter 'length' is never used in function RecvAlarm_Func
+Warning xtm\x_udp.c 775: Parameter 'DestPort' is never used in function RecvCancelAlarm_Func
+Warning xtm\x_udp.c 775: Parameter 'length' is never used in function RecvCancelAlarm_Func
+Warning xtm\x_udp.c 921: Parameter 'cFromIP' is never used in function RecvUdpTest1_Func
+Warning xtm\x_udp.c 921: Parameter 'DestPort' is never used in function RecvUdpTest1_Func
+Warning xtm\x_udp.c 921: Parameter 'length' is never used in function RecvUdpTest1_Func
+Warning xtm\x_udp.c 1147: Parameter 'DestPort' is never used in function RecvWriteEquipAddr_Func
+Warning xtm\x_udp.c 1310: Conversion may lose significant digits in function WriteAllToFlash
+Warning xtm\x_udp.c 1353: Conversion may lose significant digits in function WriteAllToFlash
+Warning xtm\x_udp.c 1459: Constant is long in function RecvReadFlash_Func
+Warning xtm\x_udp.c 1460: Constant is long in function RecvReadFlash_Func
+Warning xtm\x_udp.c 1488: 'sendlength' is assigned a value that is never used in function RecvRemoteReset_Func
+Warning xtm\x_udp.c 1983: Parameter 'DestIP' is never used in function SmarkPortDeal
+Warning xtm\x_udp.c 2065: Parameter 'DestIP' is never used in function SmarkMediaPortDeal
+Warning xtm\x_udp.c 3193: Conversion may lose significant digits in function Build_Udp_Crc
+Warning xtm\x_udp.c 3194: Conversion may lose significant digits in function Build_Udp_Crc
+Warning xtm\x_udp.c 3264: Conversion may lose significant digits in function send_debug_info
+Warning xtm\x_udp.c 3265: Conversion may lose significant digits in function send_debug_info
+Warning xtm\x_udp.c 3326: Parameter 'cFromIP' is never used in function RecvRemoteCallTest_Func
+Warning xtm\x_udp.c 3326: Parameter 'DestPort' is never used in function RecvRemoteCallTest_Func
+Warning xtm\x_udp.c 3326: Parameter 'length' is never used in function RecvRemoteCallTest_Func
+Warning xtm\x_udp.c 3337: Parameter 'DestPort' is never used in function RecvElevatorControl_Func
+Warning xtm\x_udp.c 3337: Parameter 'length' is never used in function RecvElevatorControl_Func
+Warning xtm\x_udp.c 3574: Mixing pointers to signed and unsigned char in function RecvNSReply_Func
+Warning xtm\x_udp.c 3600: Mixing pointers to signed and unsigned char in function RecvNSReply_Func
+Warning xtm\x_udp.c 3638: Parameter 'DestPort' is never used in function RecvNSReply_Func
+Warning xtm\x_udp.c 3746: Condition is always true in function RecvTalkCall_Func
+Warning xtm\x_udp.c 3748: Condition is always false in function RecvTalkCall_Func
+Warning xtm\x_udp.c 3749: Unreachable code in function RecvTalkCall_Func
+Warning xtm\x_udp.c 3900: Parameter 'DestPort' is never used in function RecvTalkCallAnswer_Func
+Warning xtm\x_udp.c 3954: Parameter 'DestPort' is never used in function RecvTalkLineUse_Func
+Warning xtm\x_udp.c 4369: Parameter 'DestPort' is never used in function RecvTalkRemoteOpenLock_Func
+Warning xtm\x_udp.c 4437: Parameter 'DestPort' is never used in function RecvTalkTrusteeship_Talk_Func
+Warning xtm\x_udp.c 4462: Parameter 'DestPort' is never used in function RecvTalkCallUpDown_Func
+Warning xtm\x_udp.c 4485: Condition is always true in function RecvWatchCallAnswer_Func
+Warning xtm\x_udp.c 4487: Condition is always false in function RecvWatchCallAnswer_Func
+Warning xtm\x_udp.c 4488: Unreachable code in function RecvWatchCallAnswer_Func
+Warning xtm\x_udp.c 4507: Parameter 'recv_buf' is never used in function RecvWatchCallAnswer_Func
+Warning xtm\x_udp.c 4507: Parameter 'cFromIP' is never used in function RecvWatchCallAnswer_Func
+Warning xtm\x_udp.c 4507: Parameter 'DestPort' is never used in function RecvWatchCallAnswer_Func
+Warning xtm\x_udp.c 4522: Parameter 'DestPort' is never used in function RecvWatchLineUse_Func
+Warning xtm\x_udp.c 4595: Parameter 'DestPort' is never used in function RecvWatchCallUpDown_Func
+Warning xtm\x_udp.c 4609: Parameter 'DestPort' is never used in function RecvTestWatchCallUpDown_Func
+Warning xtm\x_udp.c 4656: Condition is always true in function AudioDeal_Func
+Warning xtm\x_udp.c 4690: Constant is long in function AudioDeal_Func
+Warning xtm\x_udp.c 4690: Constant is long in function AudioDeal_Func
+Warning xtm\x_udp.c 4691: Conversion may lose significant digits in function AudioDeal_Func
+Warning xtm\x_udp.c 4693: Constant is long in function AudioDeal_Func
+Warning xtm\x_udp.c 4702: Constant is long in function AudioDeal_Func
+Warning xtm\x_udp.c 4717: Parameter 'cFromIP' is never used in function AudioDeal_Func
+Warning xtm\x_udp.c 4717: Parameter 'length' is never used in function AudioDeal_Func
+Warning xtm\x_udp.c 4729: Condition is always true in function VideoDeal_Func
+Warning xtm\x_udp.c 4762: Possible use of 'PackOK' before definition in function VideoDeal_Func
+Warning xtm\x_udp.c 4781: Constant is long in function VideoDeal_Func
+Warning xtm\x_udp.c 4781: Constant is long in function VideoDeal_Func
+Warning xtm\x_udp.c 4852: Nonportable pointer conversion in function VideoDeal_Func
+Warning xtm\x_udp.c 4853: Constant is long in function VideoDeal_Func
+Warning xtm\x_udp.c 4853: Constant is long in function VideoDeal_Func
+Warning xtm\x_udp.c 4856: Conversion may lose significant digits in function VideoDeal_Func
+Warning xtm\x_udp.c 4904: Parameter 'cFromIP' is never used in function VideoDeal_Func
+Warning xtm\x_udp.c 4904: Parameter 'length' is never used in function VideoDeal_Func
+Warning xtm\x_udp.c 4951: Constant is long in function SmarkAudioDeal_Func
+Warning xtm\x_udp.c 4951: Constant is long in function SmarkAudioDeal_Func
+Warning xtm\x_udp.c 4953: Conversion may lose significant digits in function SmarkAudioDeal_Func
+Warning xtm\x_udp.c 4955: Constant is long in function SmarkAudioDeal_Func
+Warning xtm\x_udp.c 4964: Constant is long in function SmarkAudioDeal_Func
+Warning xtm\x_udp.c 4994: Condition is always true in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5053: Possible use of 'PackOK' before definition in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5072: Constant is long in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5072: Constant is long in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5144: Nonportable pointer conversion in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5145: Constant is long in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5145: Constant is long in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5148: Conversion may lose significant digits in function SmarkVideoDeal_Func
+Warning xtm\x_udp.c 5527: Parameter 'length' is never used in function RecvSubDefence_Func
+Warning xtm\x_udp.c 5592: Parameter 'length' is never used in function RecvSubDefenceTip_Func
+Warning xtm\x_udp.c 5650: Parameter 'length' is never used in function RecvSubAlarm_Func
+Warning xtm\x_udp.c 5717: Parameter 'length' is never used in function RecvSubAlarmTip_Func
+Warning xtm\x_udp.c 5978: Parameter 'length' is never used in function RecvSubFind_Func
+Warning xtm\x_udp.c 6297: Call to function 'DisplaySmarkStreamWindow' with no prototype in function RecvSmarkStreamCall_Func
+Warning xtm\x_udp.c 6308: Condition is always true in function RecvSmarkStreamCall_Func
+Warning xtm\x_udp.c 6310: Condition is always false in function RecvSmarkStreamCall_Func
+Warning xtm\x_udp.c 6311: Unreachable code in function RecvSmarkStreamCall_Func
+Warning xtm\x_udp.c 6372: Mixing pointers to signed and unsigned char in function RecvSmarkStreamUpDown_Func
+Warning xtm\x_udp.c 6379: Mixing pointers to signed and unsigned char in function RecvSmarkStreamUpDown_Func
+Warning xtm\x_udp.c 6473: Call to function 'DisplaySmarkStreamWindow' with no prototype in function RecvSmarkP2PCall_Func
+
+        Available memory 3794272
+        BCC  xtm\x_net.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_net.c:
+Warning xtm\x_net.c 60: Constant is long in function clear_mac_ram
+Warning xtm\x_net.c 64: 'j' is declared but never used in function clear_mac_ram
+Warning xtm\x_net.c 140: Constant is long in function mac_init
+Warning xtm\x_net.c 140: Constant is long in function mac_init
+Warning xtm\x_net.c 189: 'i' is declared but never used in function phy_init
+Warning xtm\x_net.c 716: 'k3' is assigned a value that is never used in function mac_int_deal
+Warning xtm\x_net.c 716: 'k2' is assigned a value that is never used in function mac_int_deal
+Warning xtm\x_net.c 716: 'k1' is assigned a value that is never used in function mac_int_deal
+Warning xtm\x_net.c 789: Suspicious pointer conversion in function mac_recv
+Warning xtm\x_net.c 838: 'Pack_Status_H' is assigned a value that is never used in function mac_recv
+Warning xtm\x_net.c 838: 'Pack_Status_L' is assigned a value that is never used in function mac_recv
+
+        Available memory 3948880
+        BCC  xtm\x_comm.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_comm.c:
+Warning xtm\x_comm.c 336: 'flash_id' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'file_head' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'buf' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'val' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'DestIP' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'gpio_data' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'k' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'j' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'i' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'padd1' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 336: 'padd' is declared but never used in function dcomm1
+Warning xtm\x_comm.c 397: Call to function 'PreDealSmarkStreamWindow' with no prototype in function KeyPreDeal
+Warning xtm\x_comm.c 400: Call to function 'PreDealSmarkStreamWindow' with no prototype in function KeyPreDeal
+Warning xtm\x_comm.c 490: Call to function 'OperateSmarkStreamWindow' with no prototype in function KeyBackDeal
+Warning xtm\x_comm.c 493: Call to function 'OperateSmarkStreamWindow' with no prototype in function KeyBackDeal
+
+        Available memory 3961072
+        BCC  xtm\x_main.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_main.c:
+Warning xtm\x_main.c 332: 'temp_addr' is declared but never used in function Init_LocalVar
+Warning xtm\x_main.c 488: Parameter 'freq' is never used in function SetPTC1
+Warning xtm\x_main.c 495: Constant is long in function SetPTC2
+Warning xtm\x_main.c 616: Parameter 'Type' is never used in function Set_Encode_Clock
+Warning xtm\x_main.c 656: Constant is long in function ReadCfgFile
+Warning xtm\x_main.c 666: Constant is long in function ReadCfgFile
+Warning xtm\x_main.c 684: Constant is long in function WriteCfgFile
+Warning xtm\x_main.c 685: Constant is long in function WriteCfgFile
+Warning xtm\x_main.c 715: Constant is long in function ReadSwitchFile
+Warning xtm\x_main.c 724: Constant is long in function WriteSwitchFile
+Warning xtm\x_main.c 735: Constant is long in function ReadSerialFile
+Warning xtm\x_main.c 748: Constant is long in function ReadDefenceFile
+Warning xtm\x_main.c 778: Constant is long in function ReadFromFlash
+
+        Available memory 3947504
+        BCC  xtm\x_timer.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_timer.c:
+Warning xtm\x_timer.c 190: 'val' is declared but never used in function timer_thread_func
+Warning xtm\x_timer.c 220: 'j' is declared but never used in function CheckBrightVolume
+Warning xtm\x_timer.c 220: 'i' is declared but never used in function CheckBrightVolume
+Warning xtm\x_timer.c 411: Constant is long in function OnlineCheckFunc
+Warning xtm\x_timer.c 412: Constant is long in function OnlineCheckFunc
+Warning xtm\x_timer.c 440: 'DenIP' is declared but never used in function OnlineCheckFunc
+Warning xtm\x_timer.c 593: 'ATimeOut' is declared but never used in function AdCtrlFunc
+Warning xtm\x_timer.c 806: 'i' is declared but never used in function SyncSubFunc
+
+        Available memory 3953648
+        BCC  xtm\x_talk.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_talk.c:
+Warning xtm\x_talk.c 124: Parameter 'Remote_Addr' is never used in function CreateSmartTalkBuff
+Warning xtm\x_talk.c 124: Parameter 'Remote_IP' is never used in function CreateSmartTalkBuff
+Warning xtm\x_talk.c 158: Mixing pointers to signed and unsigned char in function Talk_Func
+Warning xtm\x_talk.c 170: Mixing pointers to signed and unsigned char in function Talk_Func
+Warning xtm\x_talk.c 189: Mixing pointers to signed and unsigned char in function TalkEnd_Func
+Warning xtm\x_talk.c 202: Mixing pointers to signed and unsigned char in function TalkEnd_Func
+Warning xtm\x_talk.c 299: 'Order' is declared but never used in function Watch_Func
+Warning xtm\x_talk.c 308: Mixing pointers to signed and unsigned char in function WatchEnd_Func
+Warning xtm\x_talk.c 372: 'i' is declared but never used in function CallR2R_Func
+Warning xtm\x_talk.c 398: Mixing pointers to signed and unsigned char in function OpenLock_Func
+Warning xtm\x_talk.c 473: Condition is always true in function PreDealTalkWindow
+Warning xtm\x_talk.c 746: Parameter 'currwindow' is never used in function OperateTalkWindow
+Warning xtm\x_talk.c 820: Condition is always true in function PreDealEPWWindow
+Warning xtm\x_talk.c 889: Condition is always true in function OperateEPWWindow
+Warning xtm\x_talk.c 899: Unreachable code in function OperateEPWWindow
+Warning xtm\x_talk.c 918: Parameter 'currwindow' is never used in function OperateEPWWindow
+Warning xtm\x_talk.c 1036: Condition is always true in function PreDealWatchWindow
+Warning xtm\x_talk.c 1134: 'i' is declared but never used in function OperateWatchWindow
+Warning xtm\x_talk.c 1134: Parameter 'currwindow' is never used in function OperateWatchWindow
+Warning xtm\x_talk.c 1202: 'CallText' is declared but never used in function DisplayTalkWatchPicWindow
+Warning xtm\x_talk.c 1202: Parameter 'ReturnType' is never used in function DisplayTalkWatchPicWindow
+Warning xtm\x_talk.c 1208: Condition is always true in function PreDealTalkWatchPicWindow
+Warning xtm\x_talk.c 1227: Condition is always true in function OperateTalkWatchPicWindow
+Warning xtm\x_talk.c 1286: Parameter 'currwindow' is never used in function OperateTalkWatchPicWindow
+Warning xtm\x_talk.c 1352: 'i' is declared but never used in function ElevatorControl_Func
+
+        Available memory 3905864
+        BCC  xtm\x_gpio.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_gpio.c:
+Warning xtm\x_gpio.c 424: Call to function 'OperateSmarkStreamWindow' with no prototype in function get_key_value
+Warning xtm\x_gpio.c 588: 'val' is declared but never used in function get_key_value
+
+        Available memory 3953648
+        BCC  xtm\x_audio.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_audio.c:
+Warning xtm\x_audio.c 382: Conversion may lose significant digits in function StartRecAudio
+Warning xtm\x_audio.c 393: Conversion may lose significant digits in function StartRecAudio
+Warning xtm\x_audio.c 458: 'Count' is declared but never used in function StartRecAudio
+Warning xtm\x_audio.c 534: 'value' is declared but never used in function StartPlayAudio
+Warning xtm\x_audio.c 534: 'Count' is declared but never used in function StartPlayAudio
+Warning xtm\x_audio.c 534: 'i' is declared but never used in function StartPlayAudio
+Warning xtm\x_audio.c 578: 'Average' is declared but never used in function StopPlayAudio
+Warning xtm\x_audio.c 598: Constant is long in function StartPlayWav
+Warning xtm\x_audio.c 598: Constant is long in function StartPlayWav
+Warning xtm\x_audio.c 634: Constant is long in function StartPlayWav_Rec
+Warning xtm\x_audio.c 634: Constant is long in function StartPlayWav_Rec
+Warning xtm\x_audio.c 651: 'Maddrs1' is declared but never used in function StartPlayWav_Rec
+Warning xtm\x_audio.c 651: Parameter 'FlashAddr' is never used in function StartPlayWav_Rec
+Warning xtm\x_audio.c 694: 'Maddrs' is declared but never used in function StartRecWav
+Warning xtm\x_audio.c 694: 'PcmO_Buf' is declared but never used in function StartRecWav
+Warning xtm\x_audio.c 694: 'i' is declared but never used in function StartRecWav
+Warning xtm\x_audio.c 702: Constant is long in function StopRecWav
+Warning xtm\x_audio.c 736: Conversion may lose significant digits in function PCMInt
+Warning xtm\x_audio.c 737: Constant is long in function PCMInt
+Warning xtm\x_audio.c 737: Constant is long in function PCMInt
+Warning xtm\x_audio.c 744: Constant is long in function PCMInt
+Warning xtm\x_audio.c 760: Constant is long in function PCMInt
+Warning xtm\x_audio.c 760: Constant is long in function PCMInt
+Warning xtm\x_audio.c 787: 'i' is declared but never used in function PCMInt
+Warning xtm\x_audio.c 787: 'tmp_Maddr' is declared but never used in function PCMInt
+Warning xtm\x_audio.c 787: 'Maddrd' is declared but never used in function PCMInt
+Warning xtm\x_audio.c 867: 'RemoteMac' is declared but never used in function send_rec_audio_data
+Warning xtm\x_audio.c 890: Conversion may lose significant digits in function CheckPlayAudioBuf
+Warning xtm\x_audio.c 895: Constant is long in function CheckPlayAudioBuf
+Warning xtm\x_audio.c 895: Constant is long in function CheckPlayAudioBuf
+Warning xtm\x_audio.c 900: Constant is long in function CheckPlayAudioBuf
+Warning xtm\x_audio.c 938: Conversion may lose significant digits in function PCMOInt
+Warning xtm\x_audio.c 948: Constant is long in function PCMOInt
+Warning xtm\x_audio.c 948: Constant is long in function PCMOInt
+Warning xtm\x_audio.c 954: Constant is long in function PCMOInt
+Warning xtm\x_audio.c 1002: 'i' is declared but never used in function PCMOInt
+Warning xtm\x_audio.c 1002: 'Tmp_PcmO_iPut' is declared but never used in function PCMOInt
+Warning xtm\x_audio.c 1037: Constant is long in function ReadWavFile
+Warning xtm\x_audio.c 1037: Constant is long in function ReadWavFile
+Warning xtm\x_audio.c 1074: Conversion may lose significant digits in function ReadWavFile
+Warning xtm\x_audio.c 1092: Constant is long in function ReadWavFile
+Warning xtm\x_audio.c 1094: Function should return a value in function ReadWavFile
+Warning xtm\x_audio.c 1094: 'ReadNum' is declared but never used in function ReadWavFile
+Warning xtm\x_audio.c 1094: 'tmp_Maddr' is assigned a value that is never used in function ReadWavFile
+Warning xtm\x_audio.c 1180: 'tmp_text' is declared but never used in function PCMPInt
+Warning xtm\x_audio.c 1180: 'Average' is declared but never used in function PCMPInt
+Warning xtm\x_audio.c 1180: 'TotalValue' is declared but never used in function PCMPInt
+Warning xtm\x_audio.c 1180: 'i' is declared but never used in function PCMPInt
+Warning xtm\x_audio.c 1484: 'PlayStatus' is declared but never used in function Half_Duplex_Deal_Func
+Warning xtm\x_audio.c 1484: 'RecStatus' is declared but never used in function Half_Duplex_Deal_Func
+Warning xtm\x_audio.c 1484: 'RecLargePlay' is declared but never used in function Half_Duplex_Deal_Func
+Warning xtm\x_audio.c 1484: 'j' is declared but never used in function Half_Duplex_Deal_Func
+Warning xtm\x_audio.c 1589: Parameter 'pcmo_h' is never used in function Cal_DectNoise
+Warning xtm\x_audio.c 1589: Parameter 'pcmo_l' is never used in function Cal_DectNoise
+Warning xtm\x_audio.c 1605: Conversion may lose significant digits in function PrintNoisePcmTotalNum
+Warning xtm\x_audio.c 1606: Conversion may lose significant digits in function PrintNoisePcmTotalNum
+
+        Available memory 3918792
+        BCC  xtm\x_video.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_video.c:
+Warning xtm\x_video.c 164: 'val' is declared but never used in function InitVideo
+Warning xtm\x_video.c 320: 'tmp' is assigned a value that is never used in function StopVideoClock
+Warning xtm\x_video.c 370: Constant is long in function MJPEGInt
+Warning xtm\x_video.c 379: Constant is long in function MJPEGInt
+Warning xtm\x_video.c 453: 'bs_addr_temp' is declared but never used in function MJPEGInt
+Warning xtm\x_video.c 453: 'picture_counter' is declared but never used in function MJPEGInt
+Warning xtm\x_video.c 453: 'l' is declared but never used in function MJPEGInt
+Warning xtm\x_video.c 453: 'i' is declared but never used in function MJPEGInt
+Warning xtm\x_video.c 754: Constant is long in function MJPEGDecInt
+Warning xtm\x_video.c 779: 'tmp_data' is declared but never used in function MJPEGDecInt
+Warning xtm\x_video.c 779: 'tmp_pos' is declared but never used in function MJPEGDecInt
+Warning xtm\x_video.c 779: 'val' is declared but never used in function MJPEGDecInt
+Warning xtm\x_video.c 779: 'j' is declared but never used in function MJPEGDecInt
+Warning xtm\x_video.c 779: 'i' is declared but never used in function MJPEGDecInt
+Warning xtm\x_video.c 836: 'val' is declared but never used in function DecoceVideo
+
+        Available memory 3945888
+        BCC  xtm\x_first.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_first.c:
+Warning xtm\x_first.c 385: Constant is long
+Warning xtm\x_first.c 1029: Nonportable pointer conversion in function GetLocal_fb_addr
+Warning xtm\x_first.c 1074: Condition is always true in function DisplayFirstWindow
+Warning xtm\x_first.c 1145: Condition is always true in function PreDealFirstWindow
+Warning xtm\x_first.c 1197: Parameter 'currwindow' is never used in function OperateFirstWindow
+Warning xtm\x_first.c 1272: Parameter 'RefreshType' is never used in function RefreshBackWindow
+Warning xtm\x_first.c 1316: 'i' is declared but never used in function DisplayStateBar
+Warning xtm\x_first.c 1503: Condition is always true in function PreDealLTpwWindow
+Warning xtm\x_first.c 1572: Condition is always true in function OperateLTpwWindow
+Warning xtm\x_first.c 1592: Unreachable code in function OperateLTpwWindow
+Warning xtm\x_first.c 1657: 'CallText' is declared but never used in function DisplaySmarkStreamWindow
+Warning xtm\x_first.c 1663: Condition is always true in function PreDealSmarkStreamWindow
+Warning xtm\x_first.c 1677: Condition is always true in function OperateSmarkStreamWindow
+Warning xtm\x_first.c 1705: Call to function 'ElevatorControl_Func' with no prototype in function OperateSmarkStreamWindow
+Warning xtm\x_first.c 1721: Parameter 'currwindow' is never used in function OperateSmarkStreamWindow
+
+        Available memory 3844704
+        BCC  xtm\x_setup.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_setup.c:
+Warning xtm\x_setup.c 146: Condition is always true in function PreDealSetupWindow
+Warning xtm\x_setup.c 236: Parameter 'currwindow' is never used in function OperateSetupWindow
+Warning xtm\x_setup.c 331: Condition is always true in function PreDealSetupMainWindow
+Warning xtm\x_setup.c 368: 'i' is declared but never used in function OperateSetupMainWindow
+Warning xtm\x_setup.c 368: Parameter 'currwindow' is never used in function OperateSetupMainWindow
+Warning xtm\x_setup.c 415: 'i' is declared but never used in function DisplayKbWindow
+Warning xtm\x_setup.c 419: Condition is always true in function PreDealKbWindow
+Warning xtm\x_setup.c 574: 'i' is declared but never used in function OperateKbWindow
+Warning xtm\x_setup.c 574: Parameter 'currwindow' is never used in function OperateKbWindow
+Warning xtm\x_setup.c 750: 'hex_data' is declared but never used in function Kb_Edit_Deal
+Warning xtm\x_setup.c 750: 'str' is declared but never used in function Kb_Edit_Deal
+Warning xtm\x_setup.c 750: 'TmpText' is declared but never used in function Kb_Edit_Deal
+Warning xtm\x_setup.c 750: 'i' is declared but never used in function Kb_Edit_Deal
+Warning xtm\x_setup.c 817: Condition is always true in function PreDealLanWindow
+Warning xtm\x_setup.c 941: Parameter 'currwindow' is never used in function OperateLanWindow
+Warning xtm\x_setup.c 1072: Condition is always true in function PreDealAddrWindow
+Warning xtm\x_setup.c 1197: 'j' is declared but never used in function OperateAddrWindow
+Warning xtm\x_setup.c 1197: 'i' is declared but never used in function OperateAddrWindow
+Warning xtm\x_setup.c 1197: Parameter 'currwindow' is never used in function OperateAddrWindow
+Warning xtm\x_setup.c 1276: Condition is always true in function PreDealPassSetupWindow
+Warning xtm\x_setup.c 1338: 'j' is declared but never used in function OperatePassSetupWindow
+Warning xtm\x_setup.c 1338: 'i' is declared but never used in function OperatePassSetupWindow
+Warning xtm\x_setup.c 1338: Parameter 'currwindow' is never used in function OperatePassSetupWindow
+Warning xtm\x_setup.c 1395: Parameter 'RefreshType' is never used in function DisplayScreenSetupWindow
+Warning xtm\x_setup.c 1399: Condition is always true in function PreDealScreenSetupWindow
+Warning xtm\x_setup.c 1439: 'isOK' is declared but never used in function OperateScreenSetupWindow
+Warning xtm\x_setup.c 1439: Parameter 'currwindow' is never used in function OperateScreenSetupWindow
+Warning xtm\x_setup.c 1490: Parameter 'RefreshType' is never used in function DisplayVoiceSetupWindow
+Warning xtm\x_setup.c 1494: Condition is always true in function PreDealVoiceSetupWindow
+Warning xtm\x_setup.c 1550: 'isOK' is declared but never used in function OperateVoiceSetupWindow
+Warning xtm\x_setup.c 1550: Parameter 'currwindow' is never used in function OperateVoiceSetupWindow
+Warning xtm\x_setup.c 1606: Condition is always true in function PreDealVersionWindow
+Warning xtm\x_setup.c 1642: 'isOK' is declared but never used in function OperateVersionWindow
+Warning xtm\x_setup.c 1642: Parameter 'currwindow' is never used in function OperateVersionWindow
+Warning xtm\x_setup.c 1778: 'yTop' is assigned a value that is never used in function RefreshVersionWindow
+Warning xtm\x_setup.c 1778: 'xLeft' is assigned a value that is never used in function RefreshVersionWindow
+Warning xtm\x_setup.c 1784: Condition is always true in function DisplayCalibrateWindow
+Warning xtm\x_setup.c 1787: Condition is always false in function DisplayCalibrateWindow
+Warning xtm\x_setup.c 1788: Unreachable code in function DisplayCalibrateWindow
+Warning xtm\x_setup.c 1790: Condition is always false in function DisplayCalibrateWindow
+Warning xtm\x_setup.c 1791: Unreachable code in function DisplayCalibrateWindow
+Warning xtm\x_setup.c 1807: Parameter 'wintype' is never used in function PreDealCalibrateWindow
+Warning xtm\x_setup.c 1885: Parameter 'wintype' is never used in function OperateCalibrateWindow
+Warning xtm\x_setup.c 1885: Parameter 'currwindow' is never used in function OperateCalibrateWindow
+Warning xtm\x_setup.c 1889: Parameter 'XLCD' is never used in function CheckTouchCalibrateWindow
+Warning xtm\x_setup.c 1889: Parameter 'YLCD' is never used in function CheckTouchCalibrateWindow
+
+        Available memory 3920200
+        BCC  xtm\x_alarm.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_alarm.c:
+Warning xtm\x_alarm.c 100: Condition is always true in function PreDealCancelFortifyWindow
+Warning xtm\x_alarm.c 192: 'i' is declared but never used in function OperateCancelFortifyWindow
+Warning xtm\x_alarm.c 192: Parameter 'currwindow' is never used in function OperateCancelFortifyWindow
+Warning xtm\x_alarm.c 298: Condition is always true in function PreDealFortifyWindow
+Warning xtm\x_alarm.c 355: 'str' is declared but never used in function OperateFortifyWindow
+Warning xtm\x_alarm.c 355: 'tmpchar' is declared but never used in function OperateFortifyWindow
+Warning xtm\x_alarm.c 355: 'tmplen' is declared but never used in function OperateFortifyWindow
+Warning xtm\x_alarm.c 355: 'i' is declared but never used in function OperateFortifyWindow
+Warning xtm\x_alarm.c 355: Parameter 'currwindow' is never used in function OperateFortifyWindow
+Warning xtm\x_alarm.c 486: Parameter 'wintype' is never used in function PreDealAlarmWindow
+Warning xtm\x_alarm.c 499: Parameter 'currwindow' is never used in function OperateAlarmWindow
+Warning xtm\x_alarm.c 521: 'i' is declared but never used in function CheckTouchAlarmWindow
+Warning xtm\x_alarm.c 572: Condition is always true in function PreDealCancelAlarmWindow
+Warning xtm\x_alarm.c 687: Parameter 'currwindow' is never used in function OperateCancelAlarmWindow
+Warning xtm\x_alarm.c 1148: 'MaxDefenceCount' is assigned a value that is never used in function CheckDefence
+
+        Available memory 3946992
+        BCC  xtm\x_info.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_info.c:
+Warning xtm\x_info.c 68: 'j' is declared but never used in function DisplayInfoWindow
+Warning xtm\x_info.c 72: Condition is always true in function PreDealInfoWindow
+Warning xtm\x_info.c 163: Parameter 'currwindow' is never used in function OperateInfoWindow
+Warning xtm\x_info.c 317: Parameter 'refreshflag' is never used in function ShowInfoList
+Warning xtm\x_info.c 334: Parameter 'infotype' is never used in function DisplayInfoContentWindow
+Warning xtm\x_info.c 338: Condition is always true in function PreDealInfoContentWindow
+Warning xtm\x_info.c 378: 'TmpInfoNo' is declared but never used in function OperateInfoContentWindow
+Warning xtm\x_info.c 378: 'i' is declared but never used in function OperateInfoContentWindow
+Warning xtm\x_info.c 378: Parameter 'currwindow' is never used in function OperateInfoContentWindow
+Warning xtm\x_info.c 461: 'tmp_row' is declared but never used in function ShowInfoContent
+Warning xtm\x_info.c 461: 'tmp_len' is assigned a value that is never used in function ShowInfoContent
+Warning xtm\x_info.c 461: 'j' is declared but never used in function ShowInfoContent
+Warning xtm\x_info.c 461: Parameter 'infotype' is never used in function ShowInfoContent
+Warning xtm\x_info.c 461: Parameter 'pageno' is never used in function ShowInfoContent
+Warning xtm\x_info.c 547: 'i' is declared but never used in function Init_InfoVar
+Warning xtm\x_info.c 551: Function should return a value in function Uninit_InfoVar
+Warning xtm\x_info.c 557: Constant is long in function ReadInfoFile
+Warning xtm\x_info.c 565: Constant is long in function ReadInfoFile
+Warning xtm\x_info.c 586: Constant is long in function WriteInfoFile
+Warning xtm\x_info.c 605: Constant is long in function WriteInfoCfgFile
+
+        Available memory 3954240
+        BCC  xtm\x_record.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_record.c:
+Warning xtm\x_record.c 66: Parameter 'RefreshType' is never used in function DisplayRecordsWindow
+Warning xtm\x_record.c 70: Condition is always true in function PreDealRecordsWindow
+Warning xtm\x_record.c 190: Mixing pointers to signed and unsigned char in function OperateRecordsWindow
+Warning xtm\x_record.c 199: Parameter 'currwindow' is never used in function OperateRecordsWindow
+Warning xtm\x_record.c 364: 'ascnum' is declared but never used in function ShowRecordsList
+Warning xtm\x_record.c 364: 'tmp_len' is assigned a value that is never used in function ShowRecordsList
+Warning xtm\x_record.c 364: 'j' is declared but never used in function ShowRecordsList
+Warning xtm\x_record.c 364: Parameter 'refreshflag' is never used in function ShowRecordsList
+Warning xtm\x_record.c 451: Condition is always true in function PreDealRecordsContentWindow
+Warning xtm\x_record.c 500: Parameter 'currwindow' is never used in function OperateRecordsContentWindow
+Warning xtm\x_record.c 544: Constant is long in function ShowRecordsContent
+Warning xtm\x_record.c 544: Constant is long in function ShowRecordsContent
+Warning xtm\x_record.c 593: 'i' is declared but never used in function Init_RecordsVar
+Warning xtm\x_record.c 597: Function should return a value in function Uninit_RecordsVar
+Warning xtm\x_record.c 603: Constant is long in function ReadRecordsFile
+Warning xtm\x_record.c 611: Constant is long in function ReadRecordsFile
+Warning xtm\x_record.c 614: Constant is long in function ReadRecordsFile
+Warning xtm\x_record.c 632: Constant is long in function WriteRecordsFile
+Warning xtm\x_record.c 651: Constant is long in function WriteRecordsCfgFile
+Warning xtm\x_record.c 703: Constant is long in function WritePicFunc
+Warning xtm\x_record.c 703: Constant is long in function WritePicFunc
+Warning xtm\x_record.c 716: Constant is long in function WritePicFunc
+
+        Available memory 3951696
+        BCC  xtm\x_date.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_date.c:
+Warning xtm\x_date.c 96: 'mon' is assigned a value that is never used in function NextDate
+
+        Available memory 3982992
+        BCC  xtm\x_touch.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_touch.c:
+Warning xtm\x_touch.c 136: Call to function 'CheckTouchSmarkStreamWindow' with no prototype in function TouchScr_Func
+Warning xtm\x_touch.c 139: Call to function 'CheckTouchSmarkStreamWindow' with no prototype in function TouchScr_Func
+Warning xtm\x_touch.c 201: 'isInTouch' is assigned a value that is never used in function TouchScr_Func
+
+        Available memory 3963208
+        BCC  xtm\x_test.c 
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_test.c:
+Warning xtm\x_test.c 750: Parameter 'currwindow' is never used in function OperateTestWindow
+
+        Available memory 3898784
+        BCC  xtm\x_splash.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_splash.c:
+Warning xtm\x_splash.c 71: Parameter 'RefreshType' is never used in function DisplaySplashWindow
+Warning xtm\x_splash.c 96: 'i' is declared but never used in function CheckTouchSplashWindow
+Warning xtm\x_splash.c 119: Call to function 'ShowWatchTarget' with no prototype in function OperateSplashWindow
+Warning xtm\x_splash.c 124: Call to function 'ShowWatchTarget' with no prototype in function OperateSplashWindow
+Warning xtm\x_splash.c 134: Call to function 'ShowWatchTarget' with no prototype in function OperateSplashWindow
+Warning xtm\x_splash.c 139: Call to function 'ShowWatchTarget' with no prototype in function OperateSplashWindow
+Warning xtm\x_splash.c 162: 'i' is declared but never used in function OperateSplashWindow
+Warning xtm\x_splash.c 162: Parameter 'currwindow' is never used in function OperateSplashWindow
+Warning xtm\x_splash.c 247: 'i' is declared but never used in function CheckTouchAdWindow
+Warning xtm\x_splash.c 270: Call to function 'ShowWatchTarget' with no prototype in function OperateAdWindow
+Warning xtm\x_splash.c 275: Call to function 'ShowWatchTarget' with no prototype in function OperateAdWindow
+Warning xtm\x_splash.c 285: Call to function 'ShowWatchTarget' with no prototype in function OperateAdWindow
+Warning xtm\x_splash.c 290: Call to function 'ShowWatchTarget' with no prototype in function OperateAdWindow
+Warning xtm\x_splash.c 314: 'i' is declared but never used in function OperateAdWindow
+Warning xtm\x_splash.c 314: Parameter 'currwindow' is never used in function OperateAdWindow
+
+        Available memory 3978136
+        BCC  xtm\x_switch.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+xtm\x_switch.c:
+Warning xtm\x_switch.c 97: Condition is always true in function OperateSwitchMainWindow
+Warning xtm\x_switch.c 105: 'i' is declared but never used in function OperateSwitchMainWindow
+Warning xtm\x_switch.c 105: Parameter 'currwindow' is never used in function OperateSwitchMainWindow
+Warning xtm\x_switch.c 133: Possible use of 's' before definition in function DisplaySwitchSetWindow
+Warning xtm\x_switch.c 180: Parameter 'Index1' is never used in function DisplaySwitchSetWindow
+Warning xtm\x_switch.c 185: Parameter 'wintype' is never used in function PreDealSwitchSetWindow
+Warning xtm\x_switch.c 297: 'i' is declared but never used in function OperateSwitchSetWindow
+Warning xtm\x_switch.c 297: Parameter 'currwindow' is never used in function OperateSwitchSetWindow
+
+        Available memory 3971644
+        BCC  appl\main.c
+Borland C++  Version 3.1 Copyright (c) 1992 Borland International
+appl\main.c:
+Warning appl\main.c 176: 'i' is assigned a value that is never used in function main
+
+        Available memory 3952540
+        cd ..\obj
+        copy x_printf.obj ..\lib\x_printf.lib
+        1 file(s) copied
+        copy ov7725.obj ..\lib\ov7725.lib
+        1 file(s) copied
+        copy x_zt2083.obj ..\lib\x_zt2083.lib
+        1 file(s) copied
+        copy x_ft5316.obj ..\lib\x_ft5316.lib
+        1 file(s) copied
+        copy x_flash.obj ..\lib\x_flash.lib
+        1 file(s) copied
+        copy x_es8388.obj ..\lib\x_es8388.lib
+        1 file(s) copied
+        copy x_disp.obj ..\lib\x_disp.lib
+        1 file(s) copied
+        copy ComDrv.obj ..\lib\ComDrv.lib
+        1 file(s) copied
+        tlink /v /i /m /s /c /L..\..\tools\bc31\lib /L..\lib /Tde /v @MAKE0000.$$$
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
+        cd ..\src
+        locate -Ls -Ll -Lp -Lx -w-w1008 -c..\bin\disp.rm ..\bin\disp
+
+D:\SDK_8130\??\FENJI_~4\src>rem copy /B ..\bin\sound.bin + ..\bin\disp.bin ..\bin\8130.bin 
+
+D:\SDK_8130\??\FENJI_~4\src>copy /B  ..\bin\disp.bin ..\bin\8130.bin 
+        1 file(s) copied.
+
+D:\SDK_8130\??\FENJI_~4\src>copy /B ..\bin\8130.bin ..\tool\8130.bin 
+        1 file(s) copied.

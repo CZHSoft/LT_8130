@@ -1,0 +1,23 @@
+#define COMBUFFLEN 1024*2
+#define BMPBUFFLEN 1600*480
+typedef struct {
+	INT8U Rbuf[COMBUFFLEN];
+	INT8U Dbuf[1300];
+	INT16U DP;
+	INT16U WP;       //ª∫≥Â«¯ –¥Œª÷√
+	INT16U RP;       //       ∂¡Œª÷√
+	INT16U TP;
+} COMBUF;
+
+#ifndef _COMMDRV_H
+#define _COMMDRV_H
+
+extern COMBUF far comm1;
+extern COMBUF far comm2;
+
+extern void interrupt Com2Int(void);
+extern void interrupt Com1Int(void);
+extern void interrupt SPIInt(void);
+
+extern void InitComm(INT16U port, INT32U baud, INT8U datafrm, INT8U fifolevel, INT8U freq);
+#endif

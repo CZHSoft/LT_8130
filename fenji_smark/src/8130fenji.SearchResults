@@ -1,0 +1,4 @@
+---- RecvNSAsk2_Func 匹配 (3 在 1 文件 ) ----
+X_udp.c (xtm):void RecvNSAsk2_Func(INT8U *recv_buf, INT8U *cFromIP, INT16U DestPort);  // //解析请求2
+X_udp.c (xtm):                        RecvNSAsk2_Func(buff, FromIP, DestPort);
+X_udp.c (xtm):void RecvNSAsk2_Func(INT8U *recv_buf, INT8U *cFromIP, INT16U DestPort)  //解析请求

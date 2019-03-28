@@ -1,0 +1,12 @@
+#ifndef x_lcd_h
+#define x_lcd_h
+extern void Init_LocalVar(void); //初始化 Local 结构
+
+extern void ResetLocalCfg(void);    //复位配置文件
+
+extern void SetPTC1(INT8U freq);
+//freq  1  --  正常　　16 --  16分频
+extern void SetPTC2(INT8U freq);
+extern void PowerStayOn(INT8U freq);   //进入低功耗模式   待机
+extern void PowerResume(void);   //退出低功耗模式   唤醒
+#endif

@@ -1,0 +1,1251 @@
+
+#include "x_printf.h"
+#include "x_disp.h"
+#include "x_flash.h"
+
+#include "x_touch.h"
+#include "x_audio.h"
+#include "x_video.h"
+
+#include "x_main.h"
+#include "x_lcd.h"
+#include "x_comm.h"
+#include "x_gpio.h"
+
+#include "x_net.h"
+#include "x_ip.h"
+#include "x_udp.h"
+
+#include "x_zt2083.h"
+#include "x_es8388.h"
+#include "x_ov7725.h"
+
+#include "x_first.h"
+#include "x_info.h"
+#include "x_record.h"
+#include "x_setup.h"
+#include "x_talk.h"
+#include "x_alarm.h"
+//#include "x_test.h"
+#include "m_init.h"
+
+//2013.08.30新增
+#include "x_splash.h"
+#include "x_switch.h"
+
+/*
+****************************************
+2013.8.29
+定义新的开机界面
+20131008
+广告类结构 
+20131015
+时间类结构
+201311
+机器序列号
+Local1.AlarmStatus 20131010 报警状态
+Local1.WorkStatus 201311 验证用
+增加布防状态按钮两组 20131010
+#define TIMERCLOCK 12000      时钟 1分钟  201310新增的时间周期
+
+2013.11.27 添加呼叫按钮
+
+****************************************
+*/
+
+
+#define VIDEO_VGA  0
+#define VIDEO_QVGA  1
+
+#define LOCAL_VIDEO   0
+#define REMOTE_VIDEO  1
+
+#define _REMOTECALLTEST  //远程呼叫测试
+//#define _ADDTABLE_SUPPORT  //地址表支持
+#define _MULTI_MACHINE_SUPPORT  //多分机支持
+//#define _CAMERA_SUPPORT     //如不用摄像头，GPIOB6、7为Comm1, GPIOC 作为8个防区使用   测试模式
+//#define _SEND_TO_SELF_TEST    //发送数据包给自己
+#define _REMOTE_FORTIFY_SUPPORT  //远程布撤防支持
+#define _MULTI_CENTER_SUPPORT  //多中心机支持   20130613
+
+#define ELEVATORCONTROL_HANGZHOU      //20120822
+#ifdef ELEVATORCONTROL_HANGZHOU      //20120822
+  #define ELEVATR_ORDER1  181
+#endif
+
+//Flash secter 删除每块为4K， 所以存储地址设为 4K的倍数
+#define INFO_ADDR       0x7f8000   //信息存储地址   第一个 512 为配置  后20个512 为信息条
+#define LOCALCFG_ADDR   0x7ff000   //配置文件存储地址
+#define LOCALCFG_ADDR1   0x7fe000   //配置文件存储地址2  备份用
+
+#define RECORDCFG_ADDR       0x7f0000   //通话记录存储地址   第一个 512 为配置  后20个512 为通话记录条
+#define RECORDPIC_ADDR       0x570000   //通话记录相片存储地址   每64K 一张照片, 最多20张
+
+#define SWITCH_ADDR    0x0d9000
+
+#ifdef _ADDTABLE_SUPPORT  //地址表支持
+ #define ADDRTABLE_ADDR       0x790000   //地址表   长度 0x50000  到  0x7effff
+ #define ADDR_MAXNUM          10000      //地址表最大数量
+#endif
+
+#define FLAGTEXT   "xtm8130sdkkkkdfdsIM"
+#define HARDWAREVER "S-HW VER 4.0.2 For 8130"    //硬件版本
+#define SOFTWAREVER "S-SW70A VER 4.2.0"   //软件版本
+#define SERIALNUM "20131111A70"    //产品序列号
+
+#define IMAGEUP  0
+#define IMAGEDOWN  1
+
+#define TOUCH_WRITE_ADDR     0x90      //触摸屏I2C地址 read:10010001 write 10010000
+#define TOUCH_READ_ADDR      0x91      //触摸屏I2C地址 read:10010001 write 10010000
+
+#define REFRESH  1
+#define NOREFRESH 0
+
+#define FULLPAGE  1
+#define NOFULLPAGE 0
+
+#define DELTACALIB 50   //触摸屏校准十字位置
+
+#define REFRESH_TOP  0x01
+#define REFRESH_MIDDLE  0x02
+#define REFRESH_BOTTOM  0x04
+
+#define MAXCOUNT   8      //防区最大数量
+#define SUBMAXNUM  3      //副机最大数量
+#define MAXDEFENCENUM  8   //最大防区数量
+#define UDPPACKMAX  1200
+#define UDPSENDMAX  20  //UDP多次发送缓冲最大值
+#define AUDIOSENDMAX  10  //Audio UDP多次发送缓冲最大值
+#define COMMSENDMAX  10  //COMM多次发送缓冲最大值
+#define MAXSENDNUM  6  //最大发送次数
+#define MAXVIDEOBUF  2  //最大视频缓冲
+#define MAXPACKNUM  30     //帧最大数据包数量
+
+#define TIMERTIME 100       //500 ms
+#define TIMERPERSEC 2       //每秒2次线程
+#define TIMER2TIME 1        //5 ms
+#define GPIOTIME 4          //20 ms  GPIO检测
+#define GPIOPERSEC 50       //每秒50次线程
+#define TIMERCLOCK 12000      //时钟 1分钟  201310
+
+#define IDLE_TIME      30      //空闲返回主界面时间
+#define CLOSELCD_TIME  60//10 //60      //待机关LCD时间
+#define POWERSTAY_TIME  30 //500 // 30      //关LCD后 进入低功耗时间
+
+#define NO_CYCLE_PLAY  0   //音频单次播放
+#define CYCLE_PLAY  1   //音频循环播放
+#define KEYDELAYTIME  30      //按钮压下时间  150ms
+
+#define PCM_REC_MAX  0x2000  //PCM录音缓冲区最大值
+#define PCM_BUF_NUM  2      //PCM放音缓冲占内存页面数　64K*2
+#define PCM_BUF_MAX  0x20000  //PCM放音缓冲区最大值
+
+//短信息
+#define INFOMAXITEM   20  //短信息最大条数
+#define INFOMAXSIZE   402 //短信息内容最大容量
+#define INFONUMPERPAGE  5  //一页显示信息数
+
+#define INFOROWLEN   44    //信息每行长度
+#define INFOROWPIXEL   528    //信息每行像素　44*12
+#define MAXROW  12          //最大行数
+#define TOTALPAGE  3          //总页数
+#define PAGEPERROW  4          //页行数
+#define VERSIONPERROW  10          //页行数
+
+//通话记录
+#define RECORDMAXITEM   20  //通话记录最大条数
+#define RECORDNUMPERPAGE  5  //一页显示通话记录数
+
+#define DIRECTCALLTIME  600                 //直接呼叫每次时间
+#define WATCHTIMEOUT  (30*TIMERPERSEC)    //(65500*TIMERPERSEC) //监视最长时间   600
+#define CALLTIMEOUT  (30*TIMERPERSEC)     //呼叫最长时间   250
+#define TALKTIMEOUT  (120*TIMERPERSEC)    //130  30*20   //通话最长时间      600
+#define ADTIMEOUT  (250*TIMERPERSEC)    //130  30*20   //AD最长时间      600  // 20140317
+
+#define LANGUAGEMAXNUM   2   //最大语言
+
+//命令 管理中心
+#define ALARM         1    //报警
+#define CANCELALARM   2    //取消报警
+#define SENDMESSAGE   3   //发送信息
+#define REPORTSTATUS  4   //设备定时报告状态
+#define QUERYSTATUS   5   //管理中心查询设备状态
+#define REMOTEDEFENCE   20   //远程布防
+#define RESETPASS       30   //复位密码
+#define SEARCHALLEQUIP  252  //搜索所有设备（管理中心－＞设备）
+#define WRITEEQUIPADDR      254  //写设备地址（管理中心－＞设备）
+
+//对讲
+#define VIDEOTALK      150 //局域网可视对讲
+#define VIDEOWATCH     152 //局域网监控
+#define NSORDER        154 //主机名解析（子网内广播）
+#define NSSERVERORDER  155 //主机名解析(NS服务器)
+#define NSSERVERORDER2  156 //设备终端解析(NS服务器)
+#define FINDEQUIP      170 //查找设备
+#define ASK              1     //命令类型 主叫
+#define REPLY            2     //命令类型 应答
+#define SINGLE_SEND           1   //单次
+#define MULTI_SEND            2     //多次
+
+#define CALL             1     //呼叫
+#define LINEUSE          2     //占线
+#define QUERYFAIL        3      //通信失败
+#define CALLANSWER       4     //呼叫应答
+#define CALLSTART        6     //开始通话
+
+#define CALLUP           7     //通话数据1（主叫方->被叫方）
+#define CALLDOWN         8     //通话数据2（被叫方->主叫方）
+#define CALLCONFIRM      9     //通话在线确认（接收方发送，以便发送方确认在线）
+#define REMOTEOPENLOCK   10     //远程开锁
+
+#define JOINGROUP        22     //加入组播组（主叫方->被叫方，被叫方应答）
+#define LEAVEGROUP       23     //退出组播组（主叫方->被叫方，被叫方应答）
+#define TURNTALK         24     //转接（被叫方->主叫方，主叫方应答）
+#define CENTERTURNTALK         25     //中心人工转接
+#define TRUSTEESHIP_TALK  26    //托管
+
+#define CALLEND          30     //通话结束
+
+#ifdef _REMOTE_FORTIFY_SUPPORT  //远程布撤防支持
+ #define REMOTE_FORTIFY   160    //远程布撤防
+#endif
+
+#ifdef _MULTI_MACHINE_SUPPORT  //多分机支持
+ #define HOSTTOSUB  222 //主机与副机通信
+ #define SYNCSUB        1   //同步状态（主机－＞副机）
+ #define SUBDEFENCE     2   //布防（副机－＞主机）
+ #define SUBALARM       3   //报警（副机－＞主机）
+ #define SUBALARMTIP    5   //报警提示（主机－＞副机）
+ #define SUBDEFENCETIP    6   //布防提示（主机－＞副机）
+ #define SUBCONTROL        10    //家电控制（副机－＞主机）
+ #define SUBCONTROLTIP     11    //家电控制提示（主机－＞副机）
+ #define SUBFIND        255   //查找副机（主机－＞副机）
+
+ #define SUBFIND_START_NUM  4  //查找副机 发送次数   6 - 4 = 2
+#endif
+
+#define UPLOADFILE  225    //上传
+#define UPLOADYUV  227    //上传YUV
+#define READFLASH  228    //读FLASH内容
+#define REMOTERESET  229    //远程重启动
+
+#define TALK_PW_TAKE  210   //新功能，对呼校验密码
+#define TALK_PW_VEFY  211   //新功能，对呼校验密码验证
+
+#define UDP_TEST  245
+
+#define DOWNLOADFILE  224    //下载
+#define STARTDOWN  1       //开始下载一个
+#define DOWN       2       //下载
+#define DOWNFINISHONE       3  //下载完成一个
+#define STOPDOWN       10      //停止下载
+#define DOWNFAIL         21 //下载失败  设备－》管理中心
+
+#define REMOTEDEBUGINFO      253   //发送远程调试信息
+#define STARTDEBUG  1    //开始
+#define STOPDEBUG  0    //停止
+#define DEBUGDATA  2    //调试数据
+#define REMOTE_REBOOT  3    //重启动
+
+#ifdef _REMOTECALLTEST  //远程呼叫测试
+ #define REMOTETEST      200   //发送远程呼叫测试
+ #define STARTTEST  1    //开始
+ #define ENTERTESTMODE  2    //进入测试模式
+ #define STOPCALL       3    //停止呼叫通话 
+#endif
+
+#define SEND_PCM  226      //发送PCM数据
+#define _REMOTEWRITEOV7725REGISTER   //远程写OV7725寄存器  调试用
+#ifdef _REMOTEWRITEOV7725REGISTER   //远程写OV7725寄存器  调试用
+ #define OV7725_OPERATE   227       //读写OV7725
+ #define OV7725READREGISTER  1
+ #define OV7725WRITEREGISTER 2
+#endif
+
+#ifdef _SEND_TO_SELF_TEST    //发送数据包给自己
+ #define SEND_SELF  251
+#endif
+
+#define _PACK_1024
+
+#define PORT_NUM  5
+#define SMALLESTSIZE  18  //512  //UDP最小包大小    20121102 512 -- 18 , MAC最小为60
+#define PACKDATALEN  1200   //数据包大小
+
+#define MAINRETURNTYPE  0
+#define TALKWATCHRETURNTYPE  1
+#define TALKWINTYPE  0
+#define WATCHWINTYPE  1
+
+#define _TEST_BTN_NUM  1 //31
+
+#define SET_LOW             0x0
+#define SET_HIGH            0x1
+
+#define FORTIFY_LED_HIGH      0x20    //GPIOD5
+#define FORTIFY_LED_LOW       0xdf
+
+#define INFO_LED_HIGH         0x40    //GPIOD6
+#define INFO_LED_LOW          0xbf
+
+//#define NET_LED_HIGH       0x80    //GPIOD7
+//#define NET_LED_LOW        0x7f
+//2013.09.10 GPIOD7转GPIOD3
+#define NET_LED_HIGH       0x08    //GPIOD4 08/F7
+#define NET_LED_LOW        0xf7
+
+#define ALARM_OUT_HIGH     0x20
+#define ALARM_OUT_LOW      0xdf
+
+//LT专用
+#define LOGO_BTNIMG_COUNT 2
+#define MENU_BTN_COUNT  6
+#define STATE_COUNT 8
+#define SPLASH_COUNT  60
+#define AD_PIC_COUNT  26
+
+#define SMART_SWITCH  81
+#define SMART_AD  88
+#define SMART_P2P  89
+
+//20131220
+//#define FT5316
+//20140113
+#define SMART_BELL
+//20140115
+//#define MAIN_SPLASH
+//20140115
+//#define MAIN_SERIALNO
+
+
+
+//广告类结构 201310
+struct AdPic1
+{
+    int PicCount;
+	INT32U AdPicAdd[10];
+};
+
+//机器序列号 201311
+struct SerialNo1{
+	char head[10];
+	char no[20];
+	char pw[5];
+};
+
+//时间类结构 201310
+struct DataTime1{
+	int second;
+	int minute;
+	int hour;
+	int day;
+	int month;
+	int year;
+};
+
+//防区信息类结构 201311
+struct DefenceInfo1{
+	INT8U DefenceType[MAXDEFENCENUM];
+	INT8U DefenceDelayTime[MAXDEFENCENUM];
+	INT8U ObjectType[MAXDEFENCENUM];
+};
+
+//开关信息
+struct SwitchInfo1
+{
+    /*
+    char SwitchCount[5];
+    
+    char SwitchNo[50][5];
+    
+    char SwitchType1[50][2];
+    char SwitchEnable[50][2];
+    char SwitchState[50][2];
+    char SwitchType2[50][2];
+    
+    char SwitchName[50][10];
+    */
+
+    INT8U SwitchCount;
+    INT8U SwitchNo[50];
+    INT8U SwitchType1[50];
+    INT8U SwitchEnable[50];
+    INT8U SwitchState[50];
+    INT8U SwitchType2[50];
+
+    char SwitchName[50][10];
+
+    
+};
+
+struct Local1{
+               INT8U PreStatus;  //20130115 预状态，防止同时的操作
+               int Status;
+               int TalkEndStatus;
+               INT8U KeyTouchNo; //按钮按下标志
+               //状态 0 空闲 1 主叫对讲  2 被叫对讲  3 监视  4 被监视  5 主叫通话
+               //6 被叫通话
+               //30 电话通话
+               int RecordPic;  //留照片  0 不留  1 呼叫留照片  2 通话留照片
+               int IFrameCount; //I帧计数
+               int IFrameNo;    //留第几个I帧
+               int HavePicRecorded;  //有照片已录制
+               INT8U ManualRecordFlag; //手动录制
+
+               char RemoteAddr[21];  //远端地址
+               char RemotePW[5];    //远程密码
+
+               unsigned char AlarmByte[2];  //报警
+
+               int CallConfirmFlag; //在线标志
+               int Timer1Num;  //定时器1计数
+               int OnlineFlag; //需检查在线确认
+               int OnlineNum;  //在线确认序号
+               INT16U TimeOut;    //监视超时,  通话超时,  呼叫超时，无人接听,ad 
+               int TalkTimeOut; //通话最长时间
+
+               //20140317
+               int StreamOnlineFlag;
+               int StreamTimeOut; 
+               
+               int PrevWindow;      //上一个窗口编号
+               int TmpWindow;       //暂存窗口编号 用于弹出窗口时
+               int CurrentWindow;   //当前窗口编号
+               int ChildWindow;
+               int isDisplayWindowFlag; //窗口正在显示中
+               int DefenceDelayFlag;    //布防延时标志
+               int DefenceDelayTime;   //计数
+               int PassLen;            //密码长度
+               int AlarmDelayFlag[MAXCOUNT];    //报警延时标志
+               int AlarmDelayTime[MAXCOUNT];   //计数
+               int AlarmStatus;                //20131010 报警状态
+
+               int CalibratePos;   //校准触摸屏十字位置 0 1 2 3
+               int CalibrateSucc;  //校准成功
+               unsigned char IP_Group[4];  //组播地址
+               unsigned char Weather[3];   //天气预报
+
+               int AddrLen;          //地址长度  S 12  B 6 M 8 H 6                 
+
+               int isHost;           //'0' 主机 '1' 副机 '2' ...
+               int ConnToHost;       //与主机连接正常 1 正常 0 不正常
+               int ConnToHostTime;
+               unsigned char HostIP[4]; //主机IP
+               char HostAddr[21]; //主机Addr
+               int DenNum;             //目标数量  副机
+               unsigned char DenIP[SUBMAXNUM][4];    //副机IP
+               char DenAddr[SUBMAXNUM][21];         //副机Addr
+               int DenFlag[SUBMAXNUM];              //副机存在标志
+               int TmpDenNum;          //目标数量暂存  副机
+               unsigned char TmpDenIP[SUBMAXNUM][4];    //副机IP
+               char TmpDenAddr[SUBMAXNUM][21];          //副机Addr
+
+               int SendSyncFlag;  //发送同步信息标志
+               int SendSyncTime;  //发送同步信息计数
+
+               char SoundName[6][50];  //声音文件名称
+
+               int NetLanStatus;   //Lan网络状态 1 断开  0 接通
+               int OldNetSpeed;  //网络速度                
+               int NoBreak;     //免扰状态 1 免扰  0 正常
+
+               int ReportSend;  //设备定时报告状态已发送
+               int RandReportTime; //设备定时报告状态随机时间
+               int ReportTimeNum;  //计时
+
+               int LcdLightFlag; //LCD背光标志
+               int LcdLightTime; //时间
+               int KeyPressTime;
+
+               int NewInfo;  //有新信息
+               int NewRecPic;  //有新留影
+
+               int nowvideoframeno;   //当前视频帧编号
+               int nowaudioframeno;   //当前音频帧编号
+
+               int ForceEndWatch;  //有呼叫时，强制关监视
+
+               int WatchTarget;  //监视目标
+               int WatchTargetMaxNum; //监视目标最大数量
+
+               int WatchKeyTouched;     //监视键 响应
+               int WatchKeyTouchedTime;  //监视键 响应 计数
+
+               int CenterKeyTouched;     //呼叫中心键 响应
+               int CenterKeyTouchedTime;  //呼叫中心键 响应 计数                         
+
+               int TestTouch; //测试触摸屏
+
+               unsigned char OldVoiceHint;         //语音提示  0 关闭  1  打开
+               unsigned char OldSpkVolume;         //SPK 音量
+               unsigned char OldMicVolume;         //MIC 音量
+               unsigned char OldTalkVoiceOpened;         //对讲时音量  0 关闭  1  打开
+               unsigned char OldTalkVolume;        //对讲时音量
+               unsigned char OldScrSave[3];        //屏幕保护  0 关闭  1  打开
+               unsigned char OldBrightVolume;      //亮度
+               unsigned char OldKeyVoice;          //按键音    0 关闭  1  打开
+
+               int SceneStatus;  //情景模式当前状态               
+
+               int CurrRingSec;  //当前振铃音乐选择项
+               int isPlayRing;   //正在播放振铃
+
+               int isRecordWav;  //正在录制留言
+               int isPlayWav;    //正在播放留言
+
+               int BootNo;
+			   int WorkStatus;   //201311 验证用
+               int CloudStatus;
+               
+               #ifdef _CAPTURESCREEN
+                 int OpenLockKeyNum;
+                 int OpenLockTime;
+               #endif
+
+
+               int TalkWatchReturnType;  //0 --  主界面   1 -- Talk Watch 界面
+               int TalkWatchWinType;  //0 -- Talk窗口  1 -- Watch窗口
+               int TalkWatchButtonNum;
+
+               unsigned char LanguageNo;    //语言下标  0 -- 中文    1 -- 英文
+               int ImageButton_Text_wd;     //按钮文字间距
+
+               int DefaultPage;
+
+               int StateBar_Top_Flag; //顶部状态条显示标志
+
+               int Text_Space;  //文本间隔
+
+               INT8U ClearVideoWindowFlag; //清视频窗口标志
+
+               INT8U NsMultiAddr[4];    //NS组播地址
+
+               INT8U Camera;      //0  -- 无  1 -- ov7725
+               INT8U VideoType;
+               INT8U MachineType;  //0x80  --- 8130
+
+               INT8U  PlayNullVoice;
+
+               INT8U Test_Disp_No;   //测试窗口 显示测试
+               INT8U Test_CurrPage;  //当前页
+               INT8U Test_FrameRate; //编码帧率
+               INT8U Test_FrameSize; //编码大小
+               INT8U Test_VideoClosed;    //视频关闭
+               INT8U Test_LocalWatchFlag; //本地视频监视
+               INT8U Test_EncodeWatchFlag; //本地视频编码解码后显示
+               INT8U Test_PlayAudioFlag; //播放音乐
+               INT8U Test_RecAudioFlag; //录音
+               INT8U Test_VideoOutput;    //视频输出  0  正常  1 自检
+               INT8U Test_PowerStayOnFreq;    //低功耗待机分频数
+               INT8U Test_VideoSdramRefresh;    //LCD显示时 SDRAM刷新周期  0  8周期  1 4周期
+               INT8U Test_OV7725FrameRate;    //OV7725 输出帧率
+
+               INT8U DecodeFrameSize; //解码大小
+               INT16U DecodeVideoWidth;
+               INT16U DecodeVideoHeight;
+
+               INT8U DecodeStreamFlag;  //正在解码流
+               INT8U DecodeJpegFlag;  //正在解静态图片
+
+               INT8U fb_page;  //显示页 0 - 1       当前页
+               INT8U fb_backpage;   //后台页
+               INT32U fb_addr[2];
+
+               INT8U Conflict_Flag;    //IP地址冲突
+               INT8U Conflict_Mac[6];
+
+               INT8U GpioWatchDogStarted;  //在GPIO检测线程中启动WatchDog
+               INT8U DebugIP[4];
+               INT8U DebugMac[6];
+               INT8U RemoteDebugInfo;  //发送远程调试信息
+
+               INT8U VideoWindowFlag;  //视频窗口打开标志
+              #ifdef _REMOTECALLTEST  //远程呼叫测试
+               INT8U EnterTestMode;  //测试模式, 5秒自动接听
+               INT8U CloseTestRing;  //测试模式, 关闭铃声
+              #endif
+
+               INT8U FirstWindowFlag;     //返回首页标志
+               INT16U FirstWindowTime;  //返回首页 计数
+
+              #ifdef ELEVATORCONTROL_HANGZHOU      //20120822
+               char Elevator_Addr[21];
+               INT8U Elevator_IP[4];
+              #endif               
+              };
+
+struct LocalCfg1{
+               char FlashHead[6];         //头部特征码
+               char Addr[20];             //地址编码
+               char AddrVerifyMa[10];         //主副机同步码
+               INT8U Mac_Addr[6]; //网卡地址
+               INT8U IP[4];       //IP地址
+               INT8U IP_Mask[4];  //子网掩码
+               INT8U IP_Gate[4];  //网关地址
+               INT8U IP_NS[4];    //NS（名称解析）服务器地址
+               INT8U IP_Server[4];  //主服务器地址（与NS服务器可为同一个）
+               INT8U IP_Broadcast[4];  //广播地址
+
+               int ReportTime;      //设备定时报告状态时间
+               INT8U DefenceStatus;       //布防状态      0 - 撤防  1 - 外出   2 - 在家   3 - 就寝   4 - 起床   5 - 自定义
+                                                  //                        11 - 外出   12 - 在家   13 - 就寝   14 - 起床   15 - 自定义     延时
+               INT8U DefenceNum;          //防区模块个数
+               INT8U DefenceInfo[32][10]; //防区信息
+
+               char EngineerPass[10];             //工程密码
+
+               int In_DelayTime;                //进入延时
+               int Out_DelayTime;               //外出延时
+               int Alarm_DelayTime;               //报警延时
+               int BellNum;                     //振铃次数
+               INT8U SoundSetup[8];          //声音          0 -- 7
+               INT8U RecPhoto;          //访客留影          0 --禁用 1 --启用
+               INT8U Language;          //语言选择    0 --简体中文 1 --繁体中文 2 -- ENLISH
+               INT8U RingType;          //铃声类型  0 普通型  1  卡通型  2  摇滚型   3  抒情型
+               INT8U CallWaitRing;      //回铃类型  0 普通型  1  卡通型  2  摇滚型   3  抒情型
+
+               INT8U VoiceHint;         //语音提示  0 关闭  1  打开
+               INT8U SpkVolume;         //SPK 音量
+               INT8U MicVolume;         //MIC 音量
+               INT8U TalkVoiceOpened;         //对讲时音量  0 关闭  1  打开
+               INT8U TalkVolume;        //对讲时音量
+               INT8U PhoneVoiceOpened;         //电话时音量  0 关闭  1  打开
+               INT8U PhoneVolume;        //电话时音量
+               INT8U ScrSave[3];        //屏幕保护  0 关闭  1  打开
+               INT8U MainPage;          //首页设置  0 默认界面  1 电话界面
+               INT8U BrightVolume;      //亮度
+               INT8U ContrastVolume;    //对比度
+               INT8U KeyVoice;          //按键音    0 关闭  1  打开
+
+               INT16 Ts_X0;                   //触摸屏
+               INT16 Ts_Y0;
+               INT16 Ts_deltaX;
+               INT16 Ts_deltaY;
+               INT16 Ts_Mode;                 //模式  X   Y
+
+               INT8U EncodeFrameRate; //编码帧率
+               INT8U EncodeFrameSize; //编码大小
+               INT8U VideoClosed;    //视频关闭
+               INT8U VideoOutput;    //视频输出  0  正常  1 自检
+
+               INT8U VideoSdramRefresh;    //LCD显示时 SDRAM刷新周期  0  8周期  1 4周期
+
+               INT8U MultiMachineSupport;  //多分机支持,对主机有效，如不支持，则不发广播查询包
+               INT8U DenMaxNum;  //副机最大数量，这一数量需小于 SUBMAXNUM， 有利于减小广播包
+
+               //防区设置
+               INT8U DefenceSetup_dType[MAXDEFENCENUM];    //防区类型     2 - 24小时防区  3 - 自定义防区
+               INT8U DefenceSetup_dDelay[MAXDEFENCENUM];   //延时时间     0 - 0秒   1 - 5秒  2 - 10秒  3 - 15秒  4 - 20秒  5 - 25秒  6 - 60秒
+               INT8U DefenceSetup_tType[MAXDEFENCENUM];    //探头类型     0 - 烟感  1 - 燃气  2 - 防拆  3 - 紧急  4 - 红外  5 - 门磁  6 - 窗磁
+
+               INT8U Scene_Defence[5][MAXDEFENCENUM];      //安防情景模式设置
+
+               INT32U EncodeErrorNum;                      //编码错误数目
+
+               INT8U ResetStatus;
+               INT8U Reset_DenNum;
+               INT8U Reset_IP[10][4];     //对方IP
+               INT8U Reset_Mac[10][6];    //对方Mac
+               char Reset_Addr[10][21];   //对方Addr
+
+               INT16U BootNo;
+              #ifdef _SEND_TO_SELF_TEST    //发送数据包给自己
+               INT16U SelfBootNo;
+              #endif
+              
+               INT8U MicDecValue; //展箱、展板模式,需减小 Mic音量
+              };
+
+struct Remote1{
+               INT8U DenNum;             //目标数量  主机+副机
+               INT8U LineUseNum;         //20101202 xu 占线数量
+               //INT8U DenMac[6]; //对方Mac
+               //INT8U DenIP[4]; //对方IP
+               INT8U GroupIP[4]; //GroupIP
+               INT8U IP[10][4];    //对方IP
+               INT8U Mac[10][6];    //对方Mac
+               INT8U Added[10];                //已加入组
+               char Addr[10][21];         //对方Addr
+              };
+struct TalkCall1{
+                INT8U BuildFlag; //幢
+                char Build[5];
+                INT8U BuildMaxlen;
+                INT8U UnitFlag;  //单元
+                char Unit[5];
+                INT8U UnitMaxlen;
+                INT8U RoomFlag;  //房号
+                char Room[5];
+                INT8U RoomMaxlen;
+                INT8U Len;
+                char TalkText[15];
+               };
+#ifdef _MULTI_MACHINE_SUPPORT  //多分机支持
+struct SyncSubData1
+      {
+               int DenNum;             //目标数量  副机     2
+               unsigned char DenIP[SUBMAXNUM][4];    //副机IP    12
+               char DenAddr[SUBMAXNUM][22];         //副机Addr   66
+
+               //以下设置 传到副机  *************
+               unsigned char DefenceStatus;       //布防状态     1
+               unsigned char DefenceNum;          //防区模块个数    1
+               unsigned char DefenceInfo[32][10]; //防区信息       320
+
+               char EngineerPass[10];             //工程密码       10
+      };
+#endif
+
+//通话数据结构
+struct talkdata1
+  {
+//   unsigned char Order;     //操作命令
+   char HostAddr[20];       //主叫方地址
+   INT8U HostIP[4]; //主叫方IP地址
+   char AssiAddr[20];       //被叫方地址
+   INT8U AssiIP[4]; //被叫方IP地址
+   INT32U timestamp;  //时间戳
+   INT16U DataType;          //数据类型
+   INT16U Frameno;           //帧序号
+   INT32U Framelen;            //帧数据长度
+   INT16U TotalPackage;      //总包数
+   INT16U CurrPackage;       //当前包数
+   INT16U Datalen;           //数据长度
+   INT16U PackLen;       //数据包大小
+  };
+
+//UDP数据发送结构
+struct Multi_Udp_Buff1{
+               INT8U isValid; //是否有效
+               INT8U SendMode; //ASK -- 多次发送   REPLY --- 单次发送
+               INT8U SendNum; //当前发送次数
+               INT8U MaxSendNum; //发送次数
+               INT8U CurrOrder;//当前命令状态,VIDEOTALK  VIDEOWATCH
+                               //主要用于需解析时，如单次命令置为0
+               INT16U DestPort;
+               INT8U MacValid;  //MAC地址有效
+               INT8U ArpNum;  //ARP次数
+               INT8U RemoteMac[6];
+               INT8U RemoteIP[4];
+               INT8U *buf;//[1520];
+              // INT8U buf[1520];
+               INT16U TimeNum;
+               INT16U DelayTime;  //等待时间
+               INT16U SendDelayTime; //发送等待时间计数  20101112
+               INT16U nlength;
+              };
+
+//Audio UDP数据发送结构
+struct Audio_Udp_Buff1{
+               INT8U isValid; //是否有效
+               INT8U SendMode; //ASK -- 多次发送   REPLY --- 单次发送
+               INT8U SendNum; //当前发送次数
+               INT8U MaxSendNum; //发送次数
+               INT8U CurrOrder;//当前命令状态,VIDEOTALK  VIDEOWATCH
+                               //主要用于需解析时，如单次命令置为0
+               INT16U DestPort;
+               INT8U MacValid;  //MAC地址有效
+               INT8U ArpNum;  //ARP次数
+               INT8U RemoteMac[6];
+               INT8U RemoteIP[4];
+               INT8U buf[86 + 64];
+               INT16U TimeNum;
+               INT16U DelayTime;  //等待时间
+               INT16U SendDelayTime; //发送等待时间计数  20101112
+               INT16U nlength;
+              };              
+              
+//COMM主动命令数据发送结构
+struct Multi_Comm_Buff1{
+               INT8U isValid; //是否有效
+               INT8U SendNum; //当前发送次数
+               INT8U m_Comm;
+               INT8U buf[256];
+               INT16U nlength;
+              };
+
+struct PicStatBuf1{
+               INT8U Flag;                      //延时清提示信息标志
+               INT8U Type;                      //类型
+               INT16U Time;
+               INT16U MaxTime;                   //最长时间
+              };
+
+struct Info1{
+               char FlashHead[8]; //Flash已存标志
+               INT16U MaxNum;   //最大信息数
+               INT16U TotalNum; //信息总数
+               INT16U NoReadedNum; //未读信息总数
+               INT16U TotalInfoPage;   //总信息页数
+               INT16U CurrentInfoPage; //当前信息页
+               INT16U CurrNo;    //当前信息序号
+               INT16U CurrPlayNo;  //当前播放序号
+              };
+
+//单条信息内容结构体
+struct InfoContent1{
+               INT8U isValid;  //有效，未删除标志   1
+               INT8U isReaded; //已读标志    1
+               INT8U HavePic;  //有无图像标志  0   1 -- 640x480  2 -- 320x240
+               char RemoteAddr[21];
+               char Time[32];    //接收时间    32
+               INT8U Type;     //类型        1    信息类型或事件类型     0 -- 主叫　　1 -- 被叫未接听  2 -- 被叫接听
+               INT32U Sn;      //序号        4
+               INT16U Length;      //长度        4
+              };                               //内存分配为444
+
+struct displayinfo1
+ {
+  INT16U totalpage;
+  INT16U pageno;
+  INT16U totalrow;
+  char content_row[MAXROW][INFOROWLEN + 2];
+  INT16U isDeleted;  //在显示信息窗口时删除了信息
+ };
+
+
+struct downfile1
+  {
+   INT8U FlagText[20];     //标志字符串
+   INT32U Faddr;    //Flash 地址
+   INT32U Filelen;            //文件大小  实际大小
+   INT32U FLen;               //Flash存储大小
+   INT16U FileType;         //文件类型 0 -- 主程序  1 -- 图片   2 -- 字库   3 -- 声音
+   INT16U Width;
+   INT16U Height;
+   INT16U xLeft;
+   INT16U yTop;
+   INT16U TotalPackage;      //总包数
+   INT16U CurrPackage;       //当前包数
+   INT16U Datalen;           //数据长度
+  };
+
+#ifndef CommonH
+#define CommonH
+  //本机状态设置
+  struct Local1 Local;
+  struct LocalCfg1 LocalCfg;
+
+  //20131008 广告结构、新尝试
+  //struct AdPic1 AdPic; 
+
+  //20131015 时间、新尝试
+  //struct DataTime1 DataTime;
+
+  //
+  //struct SerialNo1 SerialNo;
+
+  //
+  struct DefenceInfo1 DefenceInfo;
+
+  //
+  struct SwitchInfo1 SwitchInfo;
+  
+  int DeltaLen;  //数据包有效数据偏移量
+  //远端地址
+  struct Remote1 Remote;
+  char NullAddr[21];   //空字符串
+
+  //char *abc;   //测试1
+  //char date[16];  //时间字符串
+  //char temp[5];  //临时字符串
+
+  char UdpPackageHead[15];
+  char UdpPackageHead2[15];
+  INT16U LocalPort[PORT_NUM];
+  INT16U RemotePort[PORT_NUM];
+
+  struct Multi_Udp_Buff1 Multi_Udp_Buff[UDPSENDMAX]; //UDP发送缓冲
+  struct Audio_Udp_Buff1 Audio_Udp_Buff[AUDIOSENDMAX]; //Audio UDP发送缓冲  
+
+  struct PicStatBuf1 PicStatBuf;
+
+  //视频图像
+  //struct TImage video_image;
+
+  //2013.8.29  
+  //20130901 改为数组
+  //20140113 更改为新样式
+  //struct TImage splash_image[SPLASH_COUNT];   
+  
+  //struct TImage ad_image[AD_PIC_COUNT];    //20130916 新增广告
+  
+  //主界面
+  struct TImage main_image;
+  struct TImageButton menu_button[MENU_BTN_COUNT];  //2013.8.30增加主界面一个图标5-6
+  //struct TImage logo_image[LOGO_BTNIMG_COUNT];
+  struct TImage logo_image;
+  struct TImage state_image[STATE_COUNT];
+
+  struct TImage top_image;
+  struct TImage middle_image;
+  struct TImage bottom_image;
+  
+  //20131010 增加布防状态按钮两组 7+2
+  struct TImageButton bigmenu_button[9];   
+
+  //
+  struct TImageButton switch_in_button[50];
+    //按钮设置窗体
+  struct TImageButton switch_set_button[12];
+    
+  //进入设置
+  struct TImageButton num_button[15];
+  struct TEdit setup_pass_edit;
+  struct TImage setup_key_image;
+
+  //设置主窗口
+  struct TImageButton setup_button[5];
+
+  //键盘窗口
+  struct TImage kb_image;
+  struct TEdit kb_edit;
+  struct TImageButton kb_button[15];
+
+  //LAN设置窗口
+  struct TImage lan_image;
+  struct TImageButton lan_button[2];
+  struct TEdit lan_edit[5];
+
+  //房号设置窗口
+  struct TImage addr_image;
+  struct TImageButton addr_button[2];
+  struct TEdit addr_edit[8];
+
+  //修改密码窗口
+  struct TImage pass_image;
+  struct TImageButton pass_button[2];
+  struct TEdit pass_edit[3];
+
+  //屏幕调节窗口
+  struct TImage screen_image;
+  struct TImageButton screen_button[3];
+  struct TImage brightness_image[6];
+
+  //音量调节窗口
+  struct TImage voice_image;
+  struct TImageButton voice_button[5];
+  struct TImage spk_image[6];
+  struct TImage mic_image[6];
+
+  //关于窗口
+  struct TImageButton version_button[2];  
+
+  //触摸屏校准窗口
+  struct TImage calibrate_image;
+  struct TImageButton cross_button[1];
+
+  //呼出窗口
+  struct TImage call_image;
+  struct TEdit r2r_edit;
+
+  //监视窗口
+  struct TImage watchtarget_image;
+  struct TImageButton watch_button[3];
+
+  //呼入窗口
+  struct TImage talkpic_image;
+  struct TImageButton talkpic_button[3];
+
+  //监视视频窗口
+  struct TImage watchpic_image;
+  struct TImageButton watchpic_button[1];
+
+  //布防窗口
+  struct TImageButton fortify_button[2];
+
+  //撤防窗口
+  struct TEdit cancelfortify_edit;                //密码窗口文本框
+
+  //报警图像
+  struct TImage alarm_main_image;
+  struct TImage alarm_image[2];
+
+  //信息窗口
+  struct TImage info_image;
+  struct TImageButton info_button[3];
+  struct TImageButton inforow_button[INFONUMPERPAGE];
+
+  //信息查看窗口
+  struct TImage infowin_image;
+  struct TImageButton infowin_button[3];
+  struct TImage infocontent_image;
+
+  //短信息结构
+  struct Info1 Info;                                       // INFOTYPENUM      INFOMAXITEM
+  struct InfoContent1 InfoContent[INFOMAXITEM];
+  char *InfoBuff[INFOMAXITEM];  
+
+  //通话记录窗口
+  struct TImage records_image;
+  struct TImageButton records_button[3];
+  struct TImageButton recordsrow_button[RECORDNUMPERPAGE];
+  struct TImageButton recordsicon_button[RECORDNUMPERPAGE];
+  struct TImage records_pic_icon[RECORDNUMPERPAGE];
+  struct TImageButton records_call_icon[RECORDNUMPERPAGE];  //20131127呼叫按钮
+
+  //通话记录查看窗口
+  struct TImage picwin_image;
+  struct TImageButton picwin_button[3];
+  struct TImage pic_blank_image;
+
+  //通话记录结构
+  struct Info1 Records;                                       // INFOTYPENUM      INFOMAXITEM
+  struct InfoContent1 RecordsContent[RECORDMAXITEM];
+  INT32U RecordsBuff[RECORDMAXITEM];                         //照片存储地址
+  struct InfoContent1 TmpRecordsContent;  //临时结构
+
+  //测试窗口
+  struct TImage test_image;
+  struct TImage test_image1;
+  struct TImage label_null_image;
+  struct TImageButton test_button[_TEST_BTN_NUM];
+
+  struct TImage bitstream_image[6];
+  struct TImage error_image;
+  struct TImage main_image11111;
+
+
+  
+  struct TAudio soundtip_wav;
+  struct TAudio soundtip2_wav;
+  struct TAudio ring_wav;
+  struct TAudio backring_wav;
+  struct TAudio modisucc_wav;
+  struct TAudio modifail_wav;
+  struct TAudio inputerror_wav;
+  struct TAudio passerror_wav;
+  struct TAudio cancelfortify_wav;
+  struct TAudio defencedelay_wav;
+  struct TAudio fortify_wav;
+  struct TAudio cancelalarm_wav;
+  struct TAudio alarmdelay_wav;
+  struct TAudio alarm_wav;
+
+  struct TAudio null_wav;
+
+  //struct TAudio wav_1k[60];
+
+//20130902 开机播音
+  struct TAudio splash_wav;
+
+//20131205 门铃声
+  struct TAudio doorbell_wav;
+
+
+#else
+  //extern struct ethbuf ebuf;
+  //本机状态设置
+  extern struct Local1 Local;
+  extern struct LocalCfg1 LocalCfg;
+
+  //20131008 新增
+  //extern struct AdPic1 AdPic; 
+
+  //20131015 新增
+  //extern struct DataTime1 DataTime;
+
+  //
+  //extern struct SerialNo1 SerialNo;
+
+  //
+  //extern struct DefenceInfo1 DefenceInfo;
+
+  //
+  extern struct SwitchInfo1 SwitchInfo;
+   
+  extern int DeltaLen;  //数据包有效数据偏移量
+  //远端地址
+  extern struct Remote1 Remote;
+  extern char NullAddr[21];   //空字符串
+
+  //extern char *abc;
+
+  extern char UdpPackageHead[15];
+  extern char UdpPackageHead2[15];
+  extern INT16U LocalPort[PORT_NUM];
+  extern INT16U RemotePort[PORT_NUM];
+
+  extern struct Multi_Udp_Buff1 Multi_Udp_Buff[UDPSENDMAX]; //UDP发送缓冲
+  extern struct Audio_Udp_Buff1 Audio_Udp_Buff[AUDIOSENDMAX]; //Audio UDP发送缓冲  
+
+  extern struct PicStatBuf1 PicStatBuf;
+
+  //视频图像
+  //extern struct TImage video_image;
+  
+  //20130829 开机界面 
+  //20130901 改为数组
+  //extern struct TImage splash_image[SPLASH_COUNT];
+
+  //extern struct TImage ad_image[AD_PIC_COUNT];    //20130916 新增广告
+
+  //主界面
+  extern struct TImage main_image;
+  
+  //2013.8.30增加主界面一个按钮 5-6
+  extern struct TImageButton menu_button[MENU_BTN_COUNT];
+  
+  //extern struct TImage logo_image[LOGO_BTNIMG_COUNT];
+  extern struct TImage logo_image;
+
+  extern struct TImage state_image[STATE_COUNT];
+
+  extern struct TImage top_image;
+  extern struct TImage middle_image;
+  extern struct TImage bottom_image;
+
+  //20131010 增加布防状态按钮两组 7+2
+  extern struct TImageButton bigmenu_button[9];
+
+  extern struct TImageButton switch_in_button[8];
+  //按钮设置窗体
+  extern struct TImageButton switch_set_button[12];
+
+
+  //进入设置
+  extern struct TImageButton num_button[15];
+  extern struct TEdit setup_pass_edit;
+  extern struct TImage setup_key_image;
+
+  //设置主窗口
+  extern struct TImageButton setup_button[5];
+
+  //键盘窗口
+  extern struct TImage kb_image;
+  extern struct TEdit kb_edit;
+  extern struct TImageButton kb_button[15];
+
+  //LAN设置窗口
+  extern struct TImage lan_image;
+  extern struct TImageButton lan_button[2];
+  extern struct TEdit lan_edit[5];
+
+  //房号设置窗口
+  extern struct TImage addr_image;
+  extern struct TImageButton addr_button[2];
+  extern struct TEdit addr_edit[8];
+
+  //修改密码窗口
+  extern struct TImage pass_image;
+  extern struct TImageButton pass_button[2];
+  extern struct TEdit pass_edit[3];
+
+  //屏幕调节窗口
+  extern struct TImage screen_image;
+  extern struct TImageButton screen_button[3];
+  extern struct TImage brightness_image[6];
+
+  //音量调节窗口
+  extern struct TImage voice_image;
+  extern struct TImageButton voice_button[5];
+  extern struct TImage spk_image[6];
+  extern struct TImage mic_image[6];
+
+  //关于窗口
+  extern struct TImageButton version_button[2];
+
+  //触摸屏校准窗口
+  extern struct TImage calibrate_image;
+  extern struct TImageButton cross_button[1];
+
+  //呼出窗口
+  extern struct TImage call_image;
+  extern struct TEdit r2r_edit;
+
+  //监视窗口
+  extern struct TImage watchtarget_image;
+  extern struct TImageButton watch_button[3];
+
+  //呼入窗口
+  extern struct TImage talkpic_image;
+  extern struct TImageButton talkpic_button[3];
+
+  //监视视频窗口
+  extern struct TImage watchpic_image;
+  extern struct TImageButton watchpic_button[1];
+
+  //布防窗口
+  extern struct TImageButton fortify_button[2];
+
+  //撤防窗口
+  extern struct TEdit cancelfortify_edit;                //密码窗口文本框
+
+  //报警图像
+  extern struct TImage alarm_main_image;
+  extern struct TImage alarm_image[2];
+
+  //信息窗口
+  extern struct TImage info_image;
+  extern struct TImageButton info_button[3];
+  extern struct TImageButton inforow_button[INFONUMPERPAGE];
+
+  //信息查看窗口
+  extern struct TImage infowin_image;
+  extern struct TImageButton infowin_button[3];
+  extern struct TImage infocontent_image;
+
+  //短信息结构
+  extern struct Info1 Info;                                       // INFOTYPENUM      INFOMAXITEM
+  extern struct InfoContent1 InfoContent[INFOMAXITEM];
+  extern char *InfoBuff[INFOMAXITEM];            //信息内容
+
+  //通话记录窗口
+  extern struct TImage records_image;
+  extern struct TImageButton records_button[3];
+  extern struct TImageButton recordsrow_button[RECORDNUMPERPAGE];
+  extern struct TImageButton recordsicon_button[RECORDNUMPERPAGE];
+  extern struct TImage records_pic_icon[RECORDNUMPERPAGE];
+  extern struct TImageButton records_call_icon[RECORDNUMPERPAGE]; //20131127呼叫按钮
+
+
+  //通话记录查看窗口
+  extern struct TImage picwin_image;
+  extern struct TImageButton picwin_button[3];
+  extern struct TImage pic_blank_image;
+
+  //通话记录结构
+  extern struct Info1 Records;                                       // INFOTYPENUM      INFOMAXITEM
+  extern struct InfoContent1 RecordsContent[RECORDMAXITEM];
+  extern INT32U RecordsBuff[RECORDMAXITEM];                         //照片存储地址
+  extern struct InfoContent1 TmpRecordsContent;  //临时结构
+
+  //测试窗口
+  extern struct TImage test_image;
+  extern struct TImage test_image1;
+  extern struct TImage label_null_image;
+  extern struct TImageButton test_button[_TEST_BTN_NUM];
+
+  extern struct TImage bitstream_image[6];
+  extern struct TImage error_image;
+  extern struct TImage main_image11111;
+  
+
+
+  extern struct TAudio soundtip_wav;
+  extern struct TAudio soundtip2_wav;
+  extern struct TAudio ring_wav;
+  extern struct TAudio backring_wav;
+  extern struct TAudio modisucc_wav;
+  extern struct TAudio modifail_wav;
+  extern struct TAudio inputerror_wav;
+  extern struct TAudio passerror_wav;
+  extern struct TAudio cancelfortify_wav;
+  extern struct TAudio fortify_wav;
+  extern struct TAudio cancelalarm_wav;
+  extern struct TAudio defencedelay_wav;
+  extern struct TAudio alarmdelay_wav;
+  extern struct TAudio alarm_wav;
+
+  extern struct TAudio null_wav;
+
+  //extern struct TAudio wav_1k[60];
+  
+  //20130902 开机播音
+  extern struct TAudio splash_wav;
+
+   //20131205 门铃声
+  extern struct TAudio doorbell_wav;
+  
+#endif

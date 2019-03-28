@@ -1,0 +1,48 @@
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 1
+boot\entry.asm
+
+
+
+      1				     ;===============Define Code Segment===========================================
+      2	0000			     CODE_RESET	     SEGMENT PARA PUBLIC 'ENTRY'
+      3	0000			     CODE_RESET	     ENDS
+      4
+      5				     extrn   boot : far
+      6
+      7	0000			     CODE_RESET	     SEGMENT PARA PUBLIC 'ENTRY'
+      8						     ASSUME  CS:CODE_RESET
+      9						     public _Entrypoint
+     10	0000			     _Entrypoint:
+     11
+     12	0000  EA 00000000se			     JMP     FAR PTR boot
+     13	0005			     CODE_RESET	     ENDS
+     14
+     15
+     16
+     17				     ;===============Program End===================================================
+     18						     END     _ENTRYPOINT
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:55	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "14/08/11"
+??FILENAME			  Text	 "entry	  "
+??TIME				  Text	 "08:58:55"
+??VERSION			  Number 030A
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE_RESET
+@FILENAME			  Text	 ENTRY
+@WORDSIZE			  Text	 2
+BOOT (boot)			  Far	 ----:---- Extern
+STKSIZE				  Text	 1000H
+_ENTRYPOINT (_Entrypoint)	  Near	 CODE_RESET:0000
+__L__				  Text
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE_RESET			  16  0005 Para	  Public  ENTRY
+

@@ -1,0 +1,1065 @@
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 1
+boot\boot.asm
+
+
+
+      1					     include boot\bcpp31\startup.inc
+1     2					     .xlist
+1     3				     ;
+1     4				     ; Paradigm	LOCATE common assembly language	definitions/macros
+1     5				     ; Copyright (C) 1996 Paradigm Systems.  All rights	reserved.
+1     6				     ;
+1     7				     ; *********************************************************************
+1     8				     ; Permission to modify and	distribute object files	based on this
+1     9				     ; source code is granted to licensed users	of Paradigm LOCATE.
+1    10				     ;
+1    11				     ; Under no	circumstances is this source code to be	re-distributed
+1    12				     ; without the express permission of Paradigm Systems.
+1    13				     ; *********************************************************************
+1    14				     ;
+1    15				     ; Many of the macros define C-style functions and data declarations
+1    16				     ; by appending a leading underscore to public symbols.  To	fixup these
+1    17				     ; symbols,	a new symbol is	defined	which replaces all occurrences of
+1    18				     ; the original.  This permits the C declaration to	be used	except when
+1    19				     ; a name clash occurs.
+1    20				     ;
+1    21				     ; Should a	name clash occur, such as in exit() and	_exit()	(since _exit
+1    22				     ; is the alias created for	the symbol exit), the use of manual delcarations
+1    23				     ; must be used.
+1    24				     ;
+1    25
+1    26				     ;
+1    27				     ; Pointer shorthand for assembly language
+1    28				     ;
+1    29	      =	byte ptr	     bptr    equ     byte ptr		     ; Data references
+1    30	      =	word ptr	     wptr    equ     word ptr
+1    31	      =	dword ptr	     dptr    equ     dword ptr
+1    32	      =	qword ptr	     qptr    equ     qword ptr
+1    33
+1    34	      =	near ptr	     nptr    equ     near ptr		     ; Function	references
+1    35	      =	far ptr		     fptr    equ     far ptr
+1    36
+1    37				     ;
+1    38				     ; Define a	macro for defining segments.  The paramters in order are
+1    39				     ;	  - Segment name
+1    40				     ;	  - Alignment
+1    41				     ;	  - Combine type
+1    42				     ;	  - Class name
+1    43				     ;	  - Group name
+1    44				     ;
+1    45				     ; All macro arguments are mandatory except	for a group name.
+1    46				     ;
+1    47				     DefSeg  macro   sname, salign, scomb, sclass, sgroup
+1    48				     .errb   <sname>
+1    49				     .errb   <salign>
+1    50				     .errb   <scomb>
+1    51				     .errb   <sclass>
+1    52				     sname   segment salign  scomb   '&sclass'
+1    53				     sname   ends
+1    54				     ifnb    <sgroup>
+1    55				     sgroup  group   sname
+1    56				     endif
+1    57				     endm
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 2
+boot\boot.asm
+
+
+
+1    58
+1    59				     ;
+1    60				     ; Some simple macros for defining global (public) data where
+1    61				     ;	  B - byte   W - word
+1    62				     ;	  D - dword  Q - qword
+1    63				     ; and 'ginit' is an optional initializer.
+1    64				     ;
+1    65				     GlobalB macro   gname, ginit
+1    66				     .errb   <gname>
+1    67				     ifnb    <ginit>
+1    68				     _&gname db	     ginit
+1    69				     else
+1    70				     _&gname db	     ?
+1    71				     endif
+1    72				     public  _&gname
+1    73				     gname   equ     _&gname
+1    74				     endm    ; GlobalB
+1    75
+1    76				     GlobalW macro   gname, ginit
+1    77				     .errb   <gname>
+1    78				     ifnb    <ginit>
+1    79				     _&gname dw	     ginit
+1    80				     else
+1    81				     _&gname dw	     ?
+1    82				     endif
+1    83				     public  _&gname
+1    84				     gname   equ     _&gname
+1    85				     endm    ; GlobalW
+1    86
+1    87				     GlobalD macro   gname, ginit
+1    88				     .errb   <gname>
+1    89				     ifnb    <ginit>
+1    90				     _&gname dd	     ginit
+1    91				     else
+1    92				     _&gname dd	     ?
+1    93				     endif
+1    94				     public  _&gname
+1    95				     gname   equ     _&gname
+1    96				     endm    ; GlobalD
+1    97
+1    98				     GlobalQ macro   gname, ginit
+1    99				     .errb   <gname>
+1   100				     ifnb    <ginit>
+1   101				     _&gname dq	     ginit
+1   102				     else
+1   103				     _&gname dq	     ?
+1   104				     endif
+1   105				     public  _&gname
+1   106				     gname   equ     _&gname
+1   107				     endm    ; GlobalQ
+1   108
+1   109				     ;
+1   110				     ; Some simple macros for defining local (non-public) data where
+1   111				     ;	  B - byte   W - word
+1   112				     ;	  D - dword  Q - qword
+1   113				     ; and 'linit' is an optional initializer.
+1   114				     ;
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 3
+boot\boot.asm
+
+
+
+1   115				     LocalB  macro   lname, linit
+1   116				     .errb   <lname>
+1   117				     ifnb    <linit>
+1   118				     lname   db	     linit
+1   119				     else
+1   120				     lname   db	     ?
+1   121				     endif
+1   122				     endm    ; LocalB
+1   123
+1   124				     LocalW  macro   lname, linit
+1   125				     .errb   <lname>
+1   126				     ifnb    <linit>
+1   127				     lname   dw	     linit
+1   128				     else
+1   129				     lname   dw	     ?
+1   130				     endif
+1   131				     endm    ; LocalW
+1   132
+1   133				     LocalD  macro   lname, linit
+1   134				     .errb   <lname>
+1   135				     ifnb    <linit>
+1   136				     lname   dd	     linit
+1   137				     else
+1   138				     lname   dd	     ?
+1   139				     endif
+1   140				     endm    ; LocalD
+1   141
+1   142				     LocalQ  macro   lname, linit
+1   143				     .errb   <lname>
+1   144				     ifnb    <linit>
+1   145				     lname   dq	     linit
+1   146				     else
+1   147				     lname   dq	     ?
+1   148				     endif
+1   149				     endm    ; LocalQ
+1   150
+1   151				     ;
+1   152				     ; A pair of macros	for defining public functions and marking the end.
+1   153				     ; use BegProc to define a function	with an	optional forced	memory model
+1   154				     ; or use the default current memory model.	 The macro EndProc is then
+1   155				     ; used to close the function.
+1   156				     ;
+1   157				     BegProc macro   pname, pmodel
+1   158				     .errb   <pname>
+1   159				     ifb     <pmodel>
+1   160				     if	     @CodeSize EQ 0
+1   161				     _&pname proc    near
+1   162				     else
+1   163				     _&pname proc    far
+1   164				     endif
+1   165				     else
+1   166				     _&pname proc    pmodel
+1   167				     endif
+1   168				     public  _&pname
+1   169				     pname   equ     _&pname
+1   170				     endm    ; BegProc
+1   171
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 4
+boot\boot.asm
+
+
+
+1   172				     EndProc macro   pname
+1   173				     .errb   <pname>
+1   174				     _&pname endp
+1   175				     endm    ; EndProc
+1   176
+1   177				     ;
+1   178				     ; Some simple macros for defining labels where
+1   179				     ;	  B - byte   W - word
+1   180				     ;	  D - dword  Q - qword
+1   181				     ; The optional parameter 'lpub' can be used to make the label public.
+1   182				     ;
+1   183				     LabelB  macro   lname, lpub
+1   184				     .errb   <lname>
+1   185				     ifnb    <lpub>
+1   186				     public  _&lname
+1   187				     _&lname label   byte
+1   188				     lname   equ     _&lname
+1   189				     else
+1   190				     lname   label   byte
+1   191				     endif
+1   192				     endm    ; LabelB
+1   193
+1   194				     LabelW  macro   lname, lpub
+1   195				     .errb   <lname>
+1   196				     ifnb    <lpub>
+1   197				     _&lname label   word
+1   198				     public  _&lname
+1   199				     lname   equ     _&lname
+1   200				     else
+1   201				     lname   label   word
+1   202				     endif
+1   203				     endm    ; LabelW
+1   204
+1   205				     LabelD  macro   lname, lpub
+1   206				     .errb   <lname>
+1   207				     ifnb    <lpub>
+1   208				     public  _&lname
+1   209				     _&lname label   dword
+1   210				     lname   equ     _&lname
+1   211				     else
+1   212				     lname   label   dword
+1   213				     endif   ; ifnb
+1   214				     endm    ; LabelD
+1   215
+1   216				     LabelQ  macro   lname, lpub
+1   217				     .errb   <lname>
+1   218				     ifnb    <lpub>
+1   219				     public  _&lname
+1   220				     _&lname label   qword
+1   221				     lname   equ     _&lname
+1   222				     else
+1   223				     lname   label   qword
+1   224				     endif
+1   225				     endm    ; LabelQ
+1   226
+1   227				     ;
+1   228				     ; A macro to determine the	near/far-ness of an external function
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 5
+boot\boot.asm
+
+
+
+1   229				     ; based on	the defined memory model.  Also	a macro	for accessing external
+1   230				     ; labels.
+1   231				     ;
+1   232				     ExtProc macro   ename, emodel
+1   233				     .errb   <ename>
+1   234				     ifb     <emodel>
+1   235				     if	     @CodeSize EQ 0
+1   236				     extrn   _&ename : near
+1   237				     else
+1   238				     extrn   _&ename : far
+1   239				     endif
+1   240				     else
+1   241				     extrn   _&ename : emodel
+1   242				     endif
+1   243				     ename   equ     _&ename
+1   244				     endm    ; ExtProc
+1   245
+1   246				     ExtLbl  macro   ename, etype
+1   247				     .errb   <ename>
+1   248				     ifb     <etype>
+1   249				     extrn   &ename : byte
+1   250				     else
+1   251				     extrn   &ename : etype
+1   252				     endif
+1   253				     endm    ; ExtLbl
+1   254
+1   255				     ;
+1   256				     ; Some useful constants for checking code/data memory models and
+1   257				     ; the floating point options.
+1   258				     ;
+1   259	      =0000		     MM_NEAR	     equ     0		     ; Small code/data model definition
+1   260	      =0001		     MM_FAR	     equ     1		     ; Large code/data model definition
+1   261	      =0002		     MM_HUGE	     equ     2		     ; Huge code/data model definition
+1   262
+1   263	      =0000		     FPDFT	     equ     0		     ; Default floating	point option
+1   264	      =0001		     FPALT	     equ     1		     ; Alternate math
+1   265	      =0002		     FPEMU	     equ     2		     ; Emulator	math
+1   266	      =0003		     FP87	     equ     3		     ; 80x87 in-line code
+1   267
+1   268				     ;
+1   269				     ; Paradigm	LOCATE initializer priorities
+1   270				     ;
+1   271	      =0000		     PRI_FARDATA     equ     0		     ; FAR_DATA	initialization
+1   272	      =0001		     PRI_INT21H	     equ     1		     ; Int 21h installation
+1   273	      =0002		     PRI_DMM	     equ     2		     ; Dynamic memory management initialization
+1   274	      =0002		     PRI_FPU	     equ     2		     ; Floating	point initialization
+1   275	      =0002		     PRI_STDIO	     equ     2		     ; Stream I/O initialization
+1   276
+1   277				     ;
+1   278				     ; PDREMOTE	exit codes
+1   279				     ;
+1   280	      =00F2		     PDE_PUREERR     equ     242	     ; Pure virtual function error
+1   281	      =00F3		     PDE_DMMERR	     equ     243	     ; Heap initialization error
+1   282	      =00F4		     PDE_FPEXCP	     equ     244	     ; Floating	point exception
+1   283	      =00F5		     PDE_STKOVL	     equ     245	     ; Stack overflow
+1   284	      =00F6		     PDE_ABORT	     equ     246	     ; abort() called
+1   285	      =00F7		     PDE_INTO		     equ     247	     ; INTO exception
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 6
+boot\boot.asm
+
+
+
+1   286	      =00F8		     PDE_CHKIND	     equ     248	     ; CHKIND exception
+1   287	      =00F9		     PDE_IOTRAP	     equ     249	     ; I/O trap	exception
+1   288	      =00FA		     PDE_ILLOP	     equ     250	     ; Illegal opcode exception
+1   289	      =00FB		     PDE_ESCOP	     equ     251	     ; Escape opcode exception
+1   290	      =00FC		     PDE_ZERODIV     equ     252	     ; Zero divide exception
+1   291
+1   292					     .list
+1   293
+    294					     include boot\bcpp31\bcpp31.inc
+1   295					     .xlist
+1   296				     ;
+1   297				     ; Assembly	language definitions for Borland/Tubro C++, Version 5.11
+1   298				     ; Copyright (C) 1995 Paradigm Systems.  All rights	reserved.
+1   299				     ;
+1   300				     ; *********************************************************************
+1   301				     ; Permission to modify and	distribute object files	based on this
+1   302				     ; source code is granted to licensed users	of Paradigm LOCATE.
+1   303				     ;
+1   304				     ; Under no	circumstances is this source code to be	re-distributed
+1   305				     ; without the express permission of Paradigm Systems.
+1   306				     ; *********************************************************************
+1   307				     ;
+1   308				     ; This include file helps set the memory model variables and defines
+1   309				     ; data structures used by Borland/Tubro C++ assembly language modules.
+1   310				     ;
+1   311
+1   312				     IFDEF   ??Version			     ; Check for TASM
+1   313				     NOWARN  RES			     ; Turn off	reserved words warnings
+1   314				     ENDIF   ; ??Version
+1   315
+1   316				     ;
+1   317				     ; This macro is used to display comments during assembly
+1   318				     ;
+1   319				     SHOW    macro   msg
+1   320				     IFDEF   ??Version			     ; Check if	TASM is	doing the work
+1   321				     NOWARN  PDC			     ; Disable pass 1 warnings for TASM
+1   322				     ENDIF   ; ??Version
+1   323				     IF1
+1   324					     %out    msg
+1   325				     ENDIF   ; IF1
+1   326				     IFDEF   ??Version
+1   327				     WARN    PDC			     ; Turn warnings back on
+1   328				     ENDIF   ; ??Version
+1   329					     endm
+1   330
+1   331				     ;
+1   332				     ; Determine the memory module begin used and define values	which can
+1   333				     ; be tested later.	 This section appears after the	default	segment
+1   334				     ; declarations to avoid any problems with changing	the default alignment
+1   335				     ; characteristics.
+1   336				     ;
+1   337				     IFDEF	     __s__
+1   338					     @CodeSize = 0
+1   339					     @DataSize = 0
+1   340					     pptr    equ     near ptr
+1   341					     SHOW    <Assembling for the small memory model>
+1   342				     ELSEIFDEF	     __m__
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 7
+boot\boot.asm
+
+
+
+1   343					     @CodeSize = 1
+1   344					     @DataSize = 0
+1   345					     pptr    equ     far ptr
+1   346					     SHOW    <Assembling for the medium	memory model>
+1   347				     ELSEIFDEF	     __c__
+1   348					     @CodeSize = 0
+1   349					     @DataSize = 1
+1   350					     pptr    equ     near ptr
+1   351					     SHOW    <Assembling for the compact memory	model>
+1   352				     ELSEIFDEF	     __l__
+1   353	      =0001			     @CodeSize = 1
+1   354	      =0001			     @DataSize = 1
+1   355	      =	far ptr			     pptr    equ     far ptr
+1   356					     SHOW    <Assembling for the large memory model>
+2   357				     IFDEF   ??Version			     ; Check if	TASM is	doing the work
+2   358				     NOWARN  PDC			     ; Disable pass 1 warnings for TASM
+2   359				     ENDIF   ; ??Version
+2   360				     IF1
+2   361					     %out    Assembling	for the	large memory model
+2   362				     ENDIF   ; IF1
+2   363				     IFDEF   ??Version
+2   364				     WARN    PDC			     ; Turn warnings back on
+2   365				     ENDIF   ; ??Version
+1   366				     ELSEIFDEF	     __h__
+1   367					     @CodeSize = 2
+1   368					     @DataSize = 2
+1   369					     pptr    equ     far ptr
+1   370					     SHOW    <Assembling for the huge memory model>
+1   371				     ELSE
+1   372					     @CodeSize = 0
+1   373					     @DataSize = 0
+1   374					     pptr    equ     near ptr
+1   375					     SHOW    <Assembler	error: Missing memory model macro definition>
+1   376				     ;	     .ERR
+1   377				     ENDIF   ; IFDEF
+1   378
+1   379
+1   380				     ;
+1   381				     ; Initializer/terminator structure	format.	 This is used by the
+1   382				     ; startup code to automatically initialize	run-time library packages.
+1   383				     ;
+1   384
+1   385	*000			     InitRec	     struc
+1   386	*000  01*(??)		     ctype	     db	     ?		     ; 0=near, 1=far, 0ffh=not used
+1   387	*001  01*(??)		     pri	     db	     ?		     ; 0=highest, 0ffh=lowest
+1   388	*002  01*(????)		     foff	     dw	     ?		     ; Function	offset
+1   389	*004  01*(????)		     fseg	     dw	     ?		     ; Function	segment
+1   390	*006			     InitRec	     ends
+1   391
+1   392					     .list
+1   393
+    394					     include system_a.cfg
+1   395
+1   396	      =0000		     ROMINFONT	     EQU     0
+    397
+    398
+    399
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 8
+boot\boot.asm
+
+
+
+    400	0000			     boot_text SEGMENT PARA PUBLIC 'BOOT'
+    401						     assume cs:boot_text
+    402						     PUBLIC  _boot_dtime
+    403	0000			     _boot_dtime     label   word
+    404	0000  0000				     dw	     0000h
+    405
+    406						     PUBLIC  _boot_down_flag
+    407	0002			     _boot_down_flag label   byte
+    408	0002  00				     db	     00h
+    409
+    410						     PUBLIC  _dtemp_valid
+    411	0003			     _dtemp_valid    label   byte
+    412	0003  00				     db	     00h
+    413
+    414						     PUBLIC  _dtemp_pos
+    415	0004			     _dtemp_pos	     label   word
+    416	0004  0000				     dw	     0000h
+    417
+    418						     PUBLIC  _dtemp_len
+    419	0006			     _dtemp_len	     label   word
+    420	0006  0000				     dw	     0000h
+    421
+    422						     PUBLIC  _boot_dtemp
+    423	0008			     _boot_dtemp     label   byte
+    424	0008  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    425	      00 00 00 00 00 00	00+  00h, 00h
+    426	      00 00
+    427	0018  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    428	      00 00 00 00 00 00	00+  00h, 00h
+    429	      00 00
+    430	0028  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    431	      00 00 00 00 00 00	00+  00h, 00h
+    432	      00 00
+    433	0038  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    434	      00 00 00 00 00 00	00+  00h, 00h
+    435	      00 00
+    436	0048  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    437	      00 00 00 00 00 00	00+  00h, 00h
+    438	      00 00
+    439	0058  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    440	      00 00 00 00 00 00	00+  00h, 00h
+    441	      00 00
+    442	0068  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    443	      00 00 00 00 00 00	00+  00h, 00h
+    444	      00 00
+    445	0078  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    446	      00 00 00 00 00 00	00+  00h, 00h
+    447	      00 00
+    448	0088  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    449	      00 00 00 00 00 00	00+  00h, 00h
+    450	      00 00
+    451	0098  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    452	      00 00 00 00 00 00	00+  00h, 00h
+    453	      00 00
+    454	00A8  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    455	      00 00 00 00 00 00	00+  00h, 00h
+    456	      00 00
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 9
+boot\boot.asm
+
+
+
+    457	00B8  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    458	      00 00 00 00 00 00	00+  00h, 00h
+    459	      00 00
+    460	00C8  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    461	      00 00 00 00 00 00	00+  00h, 00h
+    462	      00 00
+    463	00D8  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    464	      00 00 00 00 00 00	00+  00h, 00h
+    465	      00 00
+    466	00E8  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    467	      00 00 00 00 00 00	00+  00h, 00h
+    468	      00 00
+    469	00F8  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    470	      00 00 00 00 00 00	00+  00h, 00h
+    471	      00 00
+    472	0108  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    473	      00 00 00 00 00 00	00+  00h, 00h
+    474	      00 00
+    475	0118  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h,  +
+    476	      00 00 00 00 00 00	00+  00h, 00h
+    477	      00 00
+    478	0128			     boot_text ends
+    479
+    480
+    481				     DGROUP  group   _DATA,_BSS
+    482					     assume  cs:BOOT_TEXT,ds:DGROUP
+    483	0000			     _DATA   segment word public 'DATA'
+    484	0000			     d@	     label   byte
+    485	0000			     d@w     label   word
+    486	0000			     _DATA   ends
+    487	0000			     _BSS    segment word public 'BSS'
+    488	0000			     b@	     label   byte
+    489	0000			     b@w     label   word
+    490	0000			     _BSS    ends
+    491
+    492
+    493				     ;_bootdown	:    word
+    494				     ;_bootdown	     label byte
+    495				     ;	     db	     0
+    496
+    497				     ;_b_down_f	label	     byte
+    498				     ;extrn  _b_down_f : byte
+    499				     extrn   tos : word
+    500				     extrn   _loader : far
+    501				     extrn   __startup : dword
+    502
+    503	0128			     boot_text SEGMENT PARA PUBLIC 'BOOT'
+    504						     assume cs:boot_text
+    505
+    506
+    507	      =FE80		     BITBLK_CONTROL_REG		 equ 0fe80h
+    508	      =FE81		     BITBLK_STATUS_REG		 equ (BITBLK_CONTROL_REG + 1)
+    509	      =FE82		     BITBLK_SOURCE_WIDTH_L	 equ (BITBLK_CONTROL_REG + 2)
+    510	      =FE83		     BITBLK_SOURCE_WIDTH_H	 equ (BITBLK_CONTROL_REG + 3)
+    511	      =FE84		     BITBLK_SA_L		 equ (BITBLK_CONTROL_REG + 4)
+    512	      =FE85		     BITBLK_SA_M		 equ (BITBLK_CONTROL_REG + 5)
+    513	      =FE86		     BITBLK_SA_H		 equ (BITBLK_CONTROL_REG + 6)
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 10
+boot\boot.asm
+
+
+
+    514	      =FE88		     BITBLK_DESTINATION_WIDTH_L	 equ (BITBLK_CONTROL_REG + 8)
+    515	      =FE89		     BITBLK_DESTINATION_WIDTH_H	 equ (BITBLK_CONTROL_REG + 9)
+    516	      =FE8C		     BITBLK_DA_L		 equ (BITBLK_CONTROL_REG + 12)
+    517	      =FE8D		     BITBLK_DA_M		 equ (BITBLK_CONTROL_REG + 13)
+    518	      =FE8E		     BITBLK_DA_H		 equ (BITBLK_CONTROL_REG + 14)
+    519	      =FE90		     BITBLK_X_SIZE_L		 equ (BITBLK_CONTROL_REG + 16)
+    520	      =FE91		     BITBLK_X_SIZE_H		 equ (BITBLK_CONTROL_REG + 17)
+    521	      =FE92		     BITBLK_Y_SIZE_L		 equ (BITBLK_CONTROL_REG + 18)
+    522	      =FE93		     BITBLK_Y_SIZE_H		 equ (BITBLK_CONTROL_REG + 19)
+    523					;
+    524					;    void fmem_insb_dma(unsigned long fmem,unsigned char *buffer,int count)
+    525					;
+    526					 public	 _fmem_insb_dma
+    527	0128			     _fmem_insb_dma  proc    far
+    528	0128  55			 push bp
+    529	0129  8B EC			 mov bp, sp
+    530	012B  1E			 push ds
+    531	012C  06			 push es
+    532	012D  9C			 pushf
+    533
+    534	012E  BA FE81			 mov dx,BITBLK_STATUS_REG    ;while((inportb(BITBLK_STATUS_REG)&0x01)!=0x01);	     //	    +
+    535				     等待块传送完成
+    536	0131			     fmem_insb_dma_loop3:
+    537	0131  EC			 in  al, dx
+    538	0132  B4 00			 mov ah, 0
+    539	0134  25 0001			 and ax, 1
+    540	0137  3D 0001			 cmp ax, 1
+    541	013A  75 F5			 jne short fmem_insb_dma_loop3
+    542
+    543	013C  FA			 cli			     ;可在读状态后关中断
+    544
+    545	013D  BA FE86			 mov dx,BITBLK_SA_H
+    546	0140  8A 46 08			 mov al, [bp + 8]
+    547	0143  EE			 out dx,al
+    548	0144  4A			 dec dx			     ; mov dx, BITBLK_SA_M
+    549	0145  8A 46 07			 mov al, [bp + 7]
+    550	0148  EE			 out dx,al
+    551	0149  4A			 dec dx			     ; mov dx, BITBLK_SA_L
+    552	014A  8A 46 06			 mov al, [bp + 6]
+    553	014D  EE			 out dx,al
+    554
+    555	014E  57			 push di
+    556	014F  C4 7E 0A			 les di, [bp + 10]
+    557
+    558	0152  8C C0			 mov ax, es
+    559	0154  B1 0C			 mov cl, 12
+    560	0156  D3 E8			 shr ax, cl
+    561	0158  0D FFF0			 or ax,	0fff0h
+    562	015B  BA FE8E			 mov dx,BITBLK_DA_H
+    563	015E  EE			 out dx,al
+    564
+    565	015F  8C C0			 mov ax, es
+    566	0161  B1 04			 mov cl, 4
+    567	0163  D3 E0			 shl ax, cl
+    568	0165  8B CF			 mov cx, di
+    569	0167  03 C1			 add ax, cx
+    570	0169  BA FE8C			 mov dx,BITBLK_DA_L
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 11
+boot\boot.asm
+
+
+
+    571	016C  EE			 out dx,al
+    572
+    573	016D  BA FE8D			 mov dx,BITBLK_DA_M
+    574	0170  8A C4			 mov al, ah
+    575	0172  EE			 out dx,al
+    576
+    577	0173  8B 4E 0E			 mov cx, [bp + 14]
+    578	0176  83 C1 10			 add cx, 16  ;弥补bitblock缺陷
+    579	0179  D1 E9			 shr cx, 1
+    580	017B  BA FE82			 mov dx,BITBLK_SOURCE_WIDTH_L
+    581	017E  B8 0800			 mov ax,0800h
+    582	0181  EF			 out dx,ax
+    583
+    584	0182  BA FE88			 mov dx,BITBLK_DESTINATION_WIDTH_L
+    585	0185  B8 0800			 mov ax,0800h
+    586	0188  EF			 out dx,ax
+    587
+    588	0189  BA FE90			 mov dx,BITBLK_X_SIZE_L
+    589	018C  8B C1			 mov ax,cx
+    590	018E  EF			 out dx,ax
+    591
+    592	018F  BA FE92			 mov dx,BITBLK_Y_SIZE_L
+    593	0192  B8 0001			 mov ax,1
+    594	0195  EF			 out dx,ax
+    595
+    596	0196  BA FE80			 mov dx,BITBLK_CONTROL_REG
+    597	0199  B0 51			 mov al,051h
+    598	019B  EE			 out dx,al
+    599
+    600	019C  FB			 sti
+    601
+    602	019D  BA FE81			 mov dx,BITBLK_STATUS_REG
+    603
+    604	01A0			     fmem_insb_dma_loop4:
+    605	01A0  EC			 in  al, dx
+    606	01A1  B4 00			 mov ah, 0
+    607	01A3  25 0001			 and ax, 1
+    608	01A6  3D 0001			 cmp ax, 1
+    609	01A9  75 F5			 jne short fmem_insb_dma_loop4
+    610
+    611	01AB  5F			 pop di
+    612
+    613	01AC  9D			 popf
+    614	01AD  07			 pop es
+    615	01AE  1F			 pop ds
+    616	01AF  5D			 pop bp
+    617	01B0  CB			 ret
+    618	01B1			     _fmem_insb_dma  endp
+    619
+    620					;
+    621					;    void fmem_fmem_dma(unsigned long fmem,unsigned long fmem,int count)
+    622					;
+    623					 public	 _fmem_fmem_dma
+    624	01B1			     _fmem_fmem_dma  proc    far
+    625	01B1  55			 push bp
+    626	01B2  8B EC			 mov bp, sp
+    627	01B4  1E			 push ds
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 12
+boot\boot.asm
+
+
+
+    628	01B5  06			 push es
+    629	01B6  9C			 pushf
+    630
+    631	01B7  BA FE81			 mov dx,BITBLK_STATUS_REG    ;while((inportb(BITBLK_STATUS_REG)&0x01)!=0x01);	     //	    +
+    632				     等待块传送完成
+    633	01BA			     fmem_fmem_dma_loop3:
+    634	01BA  EC			 in  al, dx
+    635	01BB  B4 00			 mov ah, 0
+    636	01BD  25 0001			 and ax, 1
+    637	01C0  3D 0001			 cmp ax, 1
+    638	01C3  75 F5			 jne short fmem_fmem_dma_loop3
+    639
+    640	01C5  FA			 cli			     ;可在读状态后关中断
+    641
+    642	01C6  BA FE86			 mov dx,BITBLK_SA_H
+    643	01C9  8A 46 08			 mov al, [bp + 8]
+    644	01CC  EE			 out dx,al
+    645	01CD  4A			 dec dx			     ; mov dx, BITBLK_SA_M
+    646	01CE  8A 46 07			 mov al, [bp + 7]
+    647	01D1  EE			 out dx,al
+    648	01D2  4A			 dec dx			     ; mov dx, BITBLK_SA_L
+    649	01D3  8A 46 06			 mov al, [bp + 6]
+    650	01D6  EE			 out dx,al
+    651
+    652	01D7  BA FE8E			 mov dx,BITBLK_DA_H
+    653	01DA  8A 46 0C			 mov al, [bp + 12]
+    654	01DD  EE			 out dx,al
+    655	01DE  4A			 dec dx			     ; mov dx, BITBLK_DA_M
+    656	01DF  8A 46 0B			 mov al, [bp + 11]
+    657	01E2  EE			 out dx,al
+    658	01E3  4A			 dec dx			     ; mov dx, BITBLK_DA_L
+    659	01E4  8A 46 0A			 mov al, [bp + 10]
+    660	01E7  EE			 out dx,al
+    661
+    662	01E8  8B 4E 0E			 mov cx, [bp + 14]
+    663				     ;	  add cx, 16 ;弥补bitblock缺陷
+    664	01EB  D1 E9			 shr cx, 1
+    665	01ED  BA FE82			 mov dx,BITBLK_SOURCE_WIDTH_L
+    666	01F0  B8 0800			 mov ax,0800h
+    667	01F3  EF			 out dx,ax
+    668
+    669	01F4  BA FE88			 mov dx,BITBLK_DESTINATION_WIDTH_L
+    670	01F7  B8 0800			 mov ax,0800h
+    671	01FA  EF			 out dx,ax
+    672
+    673	01FB  BA FE90			 mov dx,BITBLK_X_SIZE_L
+    674	01FE  8B C1			 mov ax,cx
+    675	0200  EF			 out dx,ax
+    676
+    677	0201  BA FE92			 mov dx,BITBLK_Y_SIZE_L
+    678	0204  B8 0001			 mov ax,1
+    679	0207  EF			 out dx,ax
+    680
+    681	0208  BA FE80			 mov dx,BITBLK_CONTROL_REG
+    682	020B  B0 51			 mov al,051h
+    683	020D  EE			 out dx,al
+    684
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 13
+boot\boot.asm
+
+
+
+    685	020E  FB			 sti
+    686
+    687	020F  BA FE81			 mov dx,BITBLK_STATUS_REG
+    688
+    689	0212			     fmem_fmem_dma_loop4:
+    690	0212  EC			 in  al, dx
+    691	0213  B4 00			 mov ah, 0
+    692	0215  25 0001			 and ax, 1
+    693	0218  3D 0001			 cmp ax, 1
+    694	021B  75 F5			 jne short fmem_fmem_dma_loop4
+    695
+    696
+    697	021D  9D			 popf
+    698	021E  07			 pop es
+    699	021F  1F			 pop ds
+    700	0220  5D			 pop bp
+    701	0221  CB			 ret
+    702	0222			     _fmem_fmem_dma  endp
+    703
+    704	      =FEE6		     BYTE_RD_LOW_ADD	     equ 0fee6h
+    705	      =FEE7		     BYTE_RD_HIGH_ADD	     equ 0fee7h
+    706	      =FEE8		     BYTE_RD_MOST_ADD	     equ 0fee8h
+    707	      =FEE9		     BYTE_RD_DATA	     equ 0fee9h
+    708
+    709	      =FEE2		     BYTE_WR_LOW_ADD	     equ 0fee2h
+    710	      =FEE3		     BYTE_WR_HIGH_ADD	     equ 0fee3h
+    711	      =FEE4		     BYTE_WR_MOST_ADD	     equ 0fee4h
+    712	      =FEE5		     BYTE_WR_DATA	     equ 0fee5h
+    713
+    714					;
+    715					;    void fmem_insb(unsigned long fmem,unsigned	char *buffer,int count)
+    716					;
+    717					 public	 _fmem_insb
+    718	0222			     _fmem_insb	 proc	 far
+    719	0222  55			 push bp
+    720	0223  8B EC			 mov bp, sp
+    721	0225  9C			 pushf
+    722
+    723	0226  BA FEE8			 mov dx, BYTE_RD_MOST_ADD
+    724	0229  8A 46 08			 mov al, [bp + 8]
+    725	022C  EE			 out dx, al
+    726	022D  4A			 dec dx			     ; mov dx, BYTE_RD_HIGH_ADD
+    727	022E  8A 46 07			 mov al, [bp + 7]
+    728	0231  EE			 out dx, al
+    729	0232  4A			 dec dx			     ; mov dx, BYTE_RD_LOW_ADD
+    730	0233  8A 46 06			 mov al, [bp + 6]
+    731	0236  EE			 out dx, al
+    732
+    733	0237  57			 push di
+    734	0238  BA FEE9			 mov dx, BYTE_RD_DATA
+    735	023B  C4 7E 0A			 les di, [bp + 10]
+    736	023E  8B 4E 0E			 mov cx, [bp + 14]
+    737	0241  D1 E9			 shr cx, 1
+    738	0243  FC			 cld
+    739					 ;repz ins
+    740	0244			     _fmem_insb_loop:
+    741	0244  EC			 in  al, dx
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 14
+boot\boot.asm
+
+
+
+    742	0245  86 C4			 xchg al, ah
+    743	0247  EC			 in  al, dx
+    744	0248  86 C4			 xchg al, ah
+    745				     ;	  stosb
+    746	024A  AB			 stosw
+    747	024B  E2 F7			 loop _fmem_insb_loop
+    748	024D  5F			 pop di
+    749
+    750	024E  9D			 popf
+    751	024F  5D			 pop bp
+    752	0250  CB			 ret
+    753
+    754	0251			     _fmem_insb	 endp
+    755
+    756					;
+    757					;    void fmem_fmem(unsigned long fmem,unsigned	long fmem1,int count)
+    758					;
+    759					 public	 _fmem_fmem
+    760	0251			     _fmem_fmem	 proc	 far
+    761	0251  55			 push bp
+    762	0252  8B EC			 mov bp, sp
+    763	0254  9C			 pushf
+    764
+    765	0255  BA FEE8			 mov dx, BYTE_RD_MOST_ADD
+    766	0258  8A 46 08			 mov al, [bp + 8]
+    767	025B  EE			 out dx, al
+    768	025C  4A			 dec dx			     ; mov dx, BYTE_RD_HIGH_ADD
+    769	025D  8A 46 07			 mov al, [bp + 7]
+    770	0260  EE			 out dx, al
+    771	0261  4A			 dec dx			     ; mov dx, BYTE_RD_LOW_ADD
+    772	0262  8A 46 06			 mov al, [bp + 6]
+    773	0265  EE			 out dx, al
+    774
+    775				     ;	  push di
+    776				     ;	  mov dx, BYTE_RD_DATA
+    777				     ;	  les di, [bp +	10]
+    778
+    779	0266  BA FEE4			 mov dx, BYTE_WR_MOST_ADD
+    780	0269  8A 46 0C			 mov al, [bp + 12]
+    781	026C  EE			 out dx, al
+    782	026D  4A			 dec dx			     ; mov dx, BYTE_WR_HIGH_ADD
+    783	026E  8A 46 0B			 mov al, [bp + 11]
+    784	0271  EE			 out dx, al
+    785	0272  4A			 dec dx			     ; mov dx, BYTE_WR_LOW_ADD
+    786	0273  8A 46 0A			 mov al, [bp + 10]
+    787	0276  EE			 out dx, al
+    788
+    789	0277  8B 4E 0E			 mov cx, [bp + 14]
+    790	027A  FC			 cld
+    791
+    792	027B			     _fmem_fmem_loop:
+    793	027B  BA FEE9			 mov dx, BYTE_RD_DATA
+    794	027E  EC			 in  al, dx
+    795	027F  BA FEE5			 mov dx, BYTE_WR_DATA
+    796	0282  EE			 out dx, al
+    797	0283  E2 F6			 loop _fmem_fmem_loop
+    798				     ;	  pop di
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 15
+boot\boot.asm
+
+
+
+    799
+    800	0285  9D			 popf
+    801	0286  5D			 pop bp
+    802	0287  CB			 ret
+    803
+    804	0288			     _fmem_fmem	 endp
+    805
+    806						     public  boot
+    807	0288			     boot:
+    808	0288  FA				     cli
+    809
+    810	0289  BA FF84				     mov dx, 0ff84h
+    811	028C  B0 2C				     mov al, 02ch
+    812	028E  EE				     out dx, al
+    813
+    814	028F  BA FF85				     mov dx, 0ff85h
+    815	0292  B8 000A				     mov ax, 0ah
+    816	0295  EF				     out dx, ax
+    817
+    818	0296  BA FF82				     mov dx, 0ff82h
+    819	0299  B0 40				     mov al, 040h
+    820	029B  EE				     out dx, al
+    821
+    822				     ;		     mov dx, 0ff81h
+    823				     ;		     mov al, 0aah
+    824				     ;		     out dx, al
+    825
+    826				     if	1;test sdram ready
+    827	029C  BA FEE0				     mov     dx, 0fee0h
+    828	029F			     test1:
+    829	029F  EC				     in		     al, dx
+    830
+    831	02A0  A8 04				     test	     al, 4
+    832
+    833	02A2  74 FB				     jz		     test1
+    834				     endif
+    835
+    836	02A4  9A 00000000se			     call    far ptr _loader
+    837	02A9  EA 00000000se			     jmp     Far Ptr __startup
+    838
+    839
+    840	02AE  C3				     Ret
+    841	02AF			     boot_text	     Ends
+    842						     end
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 16
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "14/08/11"
+??FILENAME			  Text	 "boot	  "
+??TIME				  Text	 "08:58:54"
+??VERSION			  Number 030A
+@CODESIZE			  Number 0001
+@CPU				  Text	 0101H
+@CURSEG				  Text	 BOOT_TEXT
+@DATASIZE			  Number 0001
+@FILENAME			  Text	 BOOT
+@WORDSIZE			  Text	 2
+B@				  Byte	 _BSS:0000
+B@W				  Word	 _BSS:0000
+BITBLK_CONTROL_REG		  Number FE80
+BITBLK_DA_H			  Number FE8E
+BITBLK_DA_L			  Number FE8C
+BITBLK_DA_M			  Number FE8D
+BITBLK_DESTINATION_WIDTH_H	  Number FE89
+BITBLK_DESTINATION_WIDTH_L	  Number FE88
+BITBLK_SA_H			  Number FE86
+BITBLK_SA_L			  Number FE84
+BITBLK_SA_M			  Number FE85
+BITBLK_SOURCE_WIDTH_H		  Number FE83
+BITBLK_SOURCE_WIDTH_L		  Number FE82
+BITBLK_STATUS_REG		  Number FE81
+BITBLK_X_SIZE_H			  Number FE91
+BITBLK_X_SIZE_L			  Number FE90
+BITBLK_Y_SIZE_H			  Number FE93
+BITBLK_Y_SIZE_L			  Number FE92
+BOOT (boot)			  Near	 BOOT_TEXT:0288
+BPTR				  Text	 byte ptr
+BYTE_RD_DATA			  Number FEE9
+BYTE_RD_HIGH_ADD		  Number FEE7
+BYTE_RD_LOW_ADD			  Number FEE6
+BYTE_RD_MOST_ADD		  Number FEE8
+BYTE_WR_DATA			  Number FEE5
+BYTE_WR_HIGH_ADD		  Number FEE3
+BYTE_WR_LOW_ADD			  Number FEE2
+BYTE_WR_MOST_ADD		  Number FEE4
+D@				  Byte	 _DATA:0000
+D@W				  Word	 _DATA:0000
+DPTR				  Text	 dword ptr
+FMEM_FMEM_DMA_LOOP3		  Near	 BOOT_TEXT:01BA
+FMEM_FMEM_DMA_LOOP4		  Near	 BOOT_TEXT:0212
+FMEM_INSB_DMA_LOOP3		  Near	 BOOT_TEXT:0131
+FMEM_INSB_DMA_LOOP4		  Near	 BOOT_TEXT:01A0
+FP87				  Number 0003
+FPALT				  Number 0001
+FPDFT				  Number 0000
+FPEMU				  Number 0002
+FPTR				  Text	 far ptr
+MM_FAR				  Number 0001
+MM_HUGE				  Number 0002
+MM_NEAR				  Number 0000
+NPTR				  Text	 near ptr
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 17
+Symbol Table
+
+
+
+PDE_ABORT			  Number 00F6
+PDE_CHKIND			  Number 00F8
+PDE_DMMERR			  Number 00F3
+PDE_ESCOP			  Number 00FB
+PDE_FPEXCP			  Number 00F4
+PDE_ILLOP			  Number 00FA
+PDE_INTO			  Number 00F7
+PDE_IOTRAP			  Number 00F9
+PDE_PUREERR			  Number 00F2
+PDE_STKOVL			  Number 00F5
+PDE_ZERODIV			  Number 00FC
+PPTR				  Text	 far ptr
+PRI_DMM				  Number 0002
+PRI_FARDATA			  Number 0000
+PRI_FPU				  Number 0002
+PRI_INT21H			  Number 0001
+PRI_STDIO			  Number 0002
+QPTR				  Text	 qword ptr
+ROMINFONT			  Number 0000
+STKSIZE				  Text	 1000H
+TEST1				  Near	 BOOT_TEXT:029F
+TOS (tos)			  Word	 ----:---- Extern
+WPTR				  Text	 word ptr
+_BOOT_DOWN_FLAG		       +  Byte	 BOOT_TEXT:0002
+(_boot_down_flag)
+_BOOT_DTEMP (_boot_dtemp)	  Byte	 BOOT_TEXT:0008
+_BOOT_DTIME (_boot_dtime)	  Word	 BOOT_TEXT:0000
+_DTEMP_LEN (_dtemp_len)		  Word	 BOOT_TEXT:0006
+_DTEMP_POS (_dtemp_pos)		  Word	 BOOT_TEXT:0004
+_DTEMP_VALID (_dtemp_valid)	  Byte	 BOOT_TEXT:0003
+_FMEM_FMEM (_fmem_fmem)		  Far	 BOOT_TEXT:0251
+_FMEM_FMEM_DMA (_fmem_fmem_dma)	  Far	 BOOT_TEXT:01B1
+_FMEM_FMEM_LOOP			  Near	 BOOT_TEXT:027B
+_FMEM_INSB (_fmem_insb)		  Far	 BOOT_TEXT:0222
+_FMEM_INSB_DMA (_fmem_insb_dma)	  Far	 BOOT_TEXT:0128
+_FMEM_INSB_LOOP			  Near	 BOOT_TEXT:0244
+_LOADER	(_loader)		  Far	 ----:---- Extern
+__L__				  Text
+__STARTUP (__startup)		  Dword	 ----:---- Extern
+
+Macro Name
+
+BEGPROC
+DEFSEG
+ENDPROC
+EXTLBL
+EXTPROC
+GLOBALB
+GLOBALD
+GLOBALQ
+GLOBALW
+LABELB
+LABELD
+LABELQ
+LABELW
+LOCALB
+LOCALD
+Turbo Assembler	 Version 3.1	    14/08/11 08:58:54	    Page 18
+Symbol Table
+
+
+
+LOCALQ
+LOCALW
+SHOW
+
+Structure Name			  Type	Offset
+
+INITREC
+ CTYPE				  Byte	 0000
+ PRI				  Byte	 0001
+ FOFF				  Word	 0002
+ FSEG				  Word	 0004
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+BOOT_TEXT			  16  02AF Para	  Public  BOOT
+DGROUP				  Group
+  _BSS				  16  0000 Word	  Public  BSS
+  _DATA				  16  0000 Word	  Public  DATA
+

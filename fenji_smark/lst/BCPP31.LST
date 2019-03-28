@@ -1,0 +1,1861 @@
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 1
+boot\bcpp31\bcpp31.asm
+
+
+
+      1					     page    60, 132
+      2					     name    bcpp31
+      3					     title   Borland C++ 3.1 Startup Code
+      4
+      5				     ;
+      6				     ; Paradigm	LOCATE Embedded	System Startup Code for	BC++ 3.1, Version 5.11
+      7				     ; Copyright (C) 1995 Paradigm Systems.  All rights	reserved.
+      8				     ;
+      9				     ; *********************************************************************
+     10				     ; Permission to modify and	distribute object files	based on this
+     11				     ; source code is granted to licensed users	of Paradigm LOCATE.
+     12				     ;
+     13				     ; Under no	circumstances is this source code to be	re-distributed
+     14				     ; without the express permission of Paradigm Systems.
+     15				     ; *********************************************************************
+     16				     ;
+     17				     ; Make sure that this startup module is specified first when linking
+     18				     ; the application.	 Requires TASM 3.0 or later to assemble.
+     19				     ;
+     20				     ;	     tasm /mx /d__MDL__	[ /dPDREMOTE ] bcpp31.asm
+     21				     ;
+     22				     ; where
+     23				     ;	     __MDL__ is	one of the following:
+     24				     ;
+     25				     ;	     __s__   Small memory model
+     26				     ;	     __m__   Medium memory model
+     27				     ;	     __c__   Compact memory model
+     28				     ;	     __l__   Large memory model
+     29				     ;	     __h__   Huge memory model
+     30				     ;
+     31				     ; The symbol PDREMOTE should be defined if	the application	will be
+     32				     ; debugged	with the Paradigm PDREMOTE kernel to permit exiting to the
+     33				     ; debugger	or intercepting	exceptions.
+     34				     ;
+     35				     ; FAR_DATA	support	is not included	in this	startup	module.	 If
+     36				     ; needed, include FARDATA.ASM.
+     37				     ;
+     38					     INCLUDE boot\bcpp31\startup.inc	     ; Macros/assembly language	definitions
+1    39					     .xlist
+1    40				     ;
+1    41				     ; Paradigm	LOCATE common assembly language	definitions/macros
+1    42				     ; Copyright (C) 1996 Paradigm Systems.  All rights	reserved.
+1    43				     ;
+1    44				     ; *********************************************************************
+1    45				     ; Permission to modify and	distribute object files	based on this
+1    46				     ; source code is granted to licensed users	of Paradigm LOCATE.
+1    47				     ;
+1    48				     ; Under no	circumstances is this source code to be	re-distributed
+1    49				     ; without the express permission of Paradigm Systems.
+1    50				     ; *********************************************************************
+1    51				     ;
+1    52				     ; Many of the macros define C-style functions and data declarations
+1    53				     ; by appending a leading underscore to public symbols.  To	fixup these
+1    54				     ; symbols,	a new symbol is	defined	which replaces all occurrences of
+1    55				     ; the original.  This permits the C declaration to	be used	except when
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 2
+boot\bcpp31\bcpp31.asm
+
+
+
+1    56				     ; a name clash occurs.
+1    57				     ;
+1    58				     ; Should a	name clash occur, such as in exit() and	_exit()	(since _exit
+1    59				     ; is the alias created for	the symbol exit), the use of manual delcarations
+1    60				     ; must be used.
+1    61				     ;
+1    62
+1    63				     ;
+1    64				     ; Pointer shorthand for assembly language
+1    65				     ;
+1    66	      =	byte ptr	     bptr    equ     byte ptr		     ; Data references
+1    67	      =	word ptr	     wptr    equ     word ptr
+1    68	      =	dword ptr	     dptr    equ     dword ptr
+1    69	      =	qword ptr	     qptr    equ     qword ptr
+1    70
+1    71	      =	near ptr	     nptr    equ     near ptr		     ; Function	references
+1    72	      =	far ptr		     fptr    equ     far ptr
+1    73
+1    74				     ;
+1    75				     ; Define a	macro for defining segments.  The paramters in order are
+1    76				     ;	  - Segment name
+1    77				     ;	  - Alignment
+1    78				     ;	  - Combine type
+1    79				     ;	  - Class name
+1    80				     ;	  - Group name
+1    81				     ;
+1    82				     ; All macro arguments are mandatory except	for a group name.
+1    83				     ;
+1    84				     DefSeg  macro   sname, salign, scomb, sclass, sgroup
+1    85				     .errb   <sname>
+1    86				     .errb   <salign>
+1    87				     .errb   <scomb>
+1    88				     .errb   <sclass>
+1    89				     sname   segment salign  scomb   '&sclass'
+1    90				     sname   ends
+1    91				     ifnb    <sgroup>
+1    92				     sgroup  group   sname
+1    93				     endif
+1    94				     endm
+1    95
+1    96				     ;
+1    97				     ; Some simple macros for defining global (public) data where
+1    98				     ;	  B - byte   W - word
+1    99				     ;	  D - dword  Q - qword
+1   100				     ; and 'ginit' is an optional initializer.
+1   101				     ;
+1   102				     GlobalB macro   gname, ginit
+1   103				     .errb   <gname>
+1   104				     ifnb    <ginit>
+1   105				     _&gname db	     ginit
+1   106				     else
+1   107				     _&gname db	     ?
+1   108				     endif
+1   109				     public  _&gname
+1   110				     gname   equ     _&gname
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 3
+boot\bcpp31\bcpp31.asm
+
+
+
+1   111				     endm    ; GlobalB
+1   112
+1   113				     GlobalW macro   gname, ginit
+1   114				     .errb   <gname>
+1   115				     ifnb    <ginit>
+1   116				     _&gname dw	     ginit
+1   117				     else
+1   118				     _&gname dw	     ?
+1   119				     endif
+1   120				     public  _&gname
+1   121				     gname   equ     _&gname
+1   122				     endm    ; GlobalW
+1   123
+1   124				     GlobalD macro   gname, ginit
+1   125				     .errb   <gname>
+1   126				     ifnb    <ginit>
+1   127				     _&gname dd	     ginit
+1   128				     else
+1   129				     _&gname dd	     ?
+1   130				     endif
+1   131				     public  _&gname
+1   132				     gname   equ     _&gname
+1   133				     endm    ; GlobalD
+1   134
+1   135				     GlobalQ macro   gname, ginit
+1   136				     .errb   <gname>
+1   137				     ifnb    <ginit>
+1   138				     _&gname dq	     ginit
+1   139				     else
+1   140				     _&gname dq	     ?
+1   141				     endif
+1   142				     public  _&gname
+1   143				     gname   equ     _&gname
+1   144				     endm    ; GlobalQ
+1   145
+1   146				     ;
+1   147				     ; Some simple macros for defining local (non-public) data where
+1   148				     ;	  B - byte   W - word
+1   149				     ;	  D - dword  Q - qword
+1   150				     ; and 'linit' is an optional initializer.
+1   151				     ;
+1   152				     LocalB  macro   lname, linit
+1   153				     .errb   <lname>
+1   154				     ifnb    <linit>
+1   155				     lname   db	     linit
+1   156				     else
+1   157				     lname   db	     ?
+1   158				     endif
+1   159				     endm    ; LocalB
+1   160
+1   161				     LocalW  macro   lname, linit
+1   162				     .errb   <lname>
+1   163				     ifnb    <linit>
+1   164				     lname   dw	     linit
+1   165				     else
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 4
+boot\bcpp31\bcpp31.asm
+
+
+
+1   166				     lname   dw	     ?
+1   167				     endif
+1   168				     endm    ; LocalW
+1   169
+1   170				     LocalD  macro   lname, linit
+1   171				     .errb   <lname>
+1   172				     ifnb    <linit>
+1   173				     lname   dd	     linit
+1   174				     else
+1   175				     lname   dd	     ?
+1   176				     endif
+1   177				     endm    ; LocalD
+1   178
+1   179				     LocalQ  macro   lname, linit
+1   180				     .errb   <lname>
+1   181				     ifnb    <linit>
+1   182				     lname   dq	     linit
+1   183				     else
+1   184				     lname   dq	     ?
+1   185				     endif
+1   186				     endm    ; LocalQ
+1   187
+1   188				     ;
+1   189				     ; A pair of macros	for defining public functions and marking the end.
+1   190				     ; use BegProc to define a function	with an	optional forced	memory model
+1   191				     ; or use the default current memory model.	 The macro EndProc is then
+1   192				     ; used to close the function.
+1   193				     ;
+1   194				     BegProc macro   pname, pmodel
+1   195				     .errb   <pname>
+1   196				     ifb     <pmodel>
+1   197				     if	     @CodeSize EQ 0
+1   198				     _&pname proc    near
+1   199				     else
+1   200				     _&pname proc    far
+1   201				     endif
+1   202				     else
+1   203				     _&pname proc    pmodel
+1   204				     endif
+1   205				     public  _&pname
+1   206				     pname   equ     _&pname
+1   207				     endm    ; BegProc
+1   208
+1   209				     EndProc macro   pname
+1   210				     .errb   <pname>
+1   211				     _&pname endp
+1   212				     endm    ; EndProc
+1   213
+1   214				     ;
+1   215				     ; Some simple macros for defining labels where
+1   216				     ;	  B - byte   W - word
+1   217				     ;	  D - dword  Q - qword
+1   218				     ; The optional parameter 'lpub' can be used to make the label public.
+1   219				     ;
+1   220				     LabelB  macro   lname, lpub
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 5
+boot\bcpp31\bcpp31.asm
+
+
+
+1   221				     .errb   <lname>
+1   222				     ifnb    <lpub>
+1   223				     public  _&lname
+1   224				     _&lname label   byte
+1   225				     lname   equ     _&lname
+1   226				     else
+1   227				     lname   label   byte
+1   228				     endif
+1   229				     endm    ; LabelB
+1   230
+1   231				     LabelW  macro   lname, lpub
+1   232				     .errb   <lname>
+1   233				     ifnb    <lpub>
+1   234				     _&lname label   word
+1   235				     public  _&lname
+1   236				     lname   equ     _&lname
+1   237				     else
+1   238				     lname   label   word
+1   239				     endif
+1   240				     endm    ; LabelW
+1   241
+1   242				     LabelD  macro   lname, lpub
+1   243				     .errb   <lname>
+1   244				     ifnb    <lpub>
+1   245				     public  _&lname
+1   246				     _&lname label   dword
+1   247				     lname   equ     _&lname
+1   248				     else
+1   249				     lname   label   dword
+1   250				     endif   ; ifnb
+1   251				     endm    ; LabelD
+1   252
+1   253				     LabelQ  macro   lname, lpub
+1   254				     .errb   <lname>
+1   255				     ifnb    <lpub>
+1   256				     public  _&lname
+1   257				     _&lname label   qword
+1   258				     lname   equ     _&lname
+1   259				     else
+1   260				     lname   label   qword
+1   261				     endif
+1   262				     endm    ; LabelQ
+1   263
+1   264				     ;
+1   265				     ; A macro to determine the	near/far-ness of an external function
+1   266				     ; based on	the defined memory model.  Also	a macro	for accessing external
+1   267				     ; labels.
+1   268				     ;
+1   269				     ExtProc macro   ename, emodel
+1   270				     .errb   <ename>
+1   271				     ifb     <emodel>
+1   272				     if	     @CodeSize EQ 0
+1   273				     extrn   _&ename : near
+1   274				     else
+1   275				     extrn   _&ename : far
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 6
+boot\bcpp31\bcpp31.asm
+
+
+
+1   276				     endif
+1   277				     else
+1   278				     extrn   _&ename : emodel
+1   279				     endif
+1   280				     ename   equ     _&ename
+1   281				     endm    ; ExtProc
+1   282
+1   283				     ExtLbl  macro   ename, etype
+1   284				     .errb   <ename>
+1   285				     ifb     <etype>
+1   286				     extrn   &ename : byte
+1   287				     else
+1   288				     extrn   &ename : etype
+1   289				     endif
+1   290				     endm    ; ExtLbl
+1   291
+1   292				     ;
+1   293				     ; Some useful constants for checking code/data memory models and
+1   294				     ; the floating point options.
+1   295				     ;
+1   296	      =0000		     MM_NEAR	     equ     0		     ; Small code/data model definition
+1   297	      =0001		     MM_FAR	     equ     1		     ; Large code/data model definition
+1   298	      =0002		     MM_HUGE	     equ     2		     ; Huge code/data model definition
+1   299
+1   300	      =0000		     FPDFT	     equ     0		     ; Default floating	point option
+1   301	      =0001		     FPALT	     equ     1		     ; Alternate math
+1   302	      =0002		     FPEMU	     equ     2		     ; Emulator	math
+1   303	      =0003		     FP87	     equ     3		     ; 80x87 in-line code
+1   304
+1   305				     ;
+1   306				     ; Paradigm	LOCATE initializer priorities
+1   307				     ;
+1   308	      =0000		     PRI_FARDATA     equ     0		     ; FAR_DATA	initialization
+1   309	      =0001		     PRI_INT21H	     equ     1		     ; Int 21h installation
+1   310	      =0002		     PRI_DMM	     equ     2		     ; Dynamic memory management initialization
+1   311	      =0002		     PRI_FPU	     equ     2		     ; Floating	point initialization
+1   312	      =0002		     PRI_STDIO	     equ     2		     ; Stream I/O initialization
+1   313
+1   314				     ;
+1   315				     ; PDREMOTE	exit codes
+1   316				     ;
+1   317	      =00F2		     PDE_PUREERR     equ     242	     ; Pure virtual function error
+1   318	      =00F3		     PDE_DMMERR	     equ     243	     ; Heap initialization error
+1   319	      =00F4		     PDE_FPEXCP	     equ     244	     ; Floating	point exception
+1   320	      =00F5		     PDE_STKOVL	     equ     245	     ; Stack overflow
+1   321	      =00F6		     PDE_ABORT	     equ     246	     ; abort() called
+1   322	      =00F7		     PDE_INTO		     equ     247	     ; INTO exception
+1   323	      =00F8		     PDE_CHKIND	     equ     248	     ; CHKIND exception
+1   324	      =00F9		     PDE_IOTRAP	     equ     249	     ; I/O trap	exception
+1   325	      =00FA		     PDE_ILLOP	     equ     250	     ; Illegal opcode exception
+1   326	      =00FB		     PDE_ESCOP	     equ     251	     ; Escape opcode exception
+1   327	      =00FC		     PDE_ZERODIV     equ     252	     ; Zero divide exception
+1   328
+1   329					     .list
+1   330
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 7
+boot\bcpp31\bcpp31.asm
+
+
+
+    331					     INCLUDE boot\bcpp31\bcpp31.inc	     ; Compiler-specific defintions
+1   332					     .xlist
+1   333				     ;
+1   334				     ; Assembly	language definitions for Borland/Tubro C++, Version 5.11
+1   335				     ; Copyright (C) 1995 Paradigm Systems.  All rights	reserved.
+1   336				     ;
+1   337				     ; *********************************************************************
+1   338				     ; Permission to modify and	distribute object files	based on this
+1   339				     ; source code is granted to licensed users	of Paradigm LOCATE.
+1   340				     ;
+1   341				     ; Under no	circumstances is this source code to be	re-distributed
+1   342				     ; without the express permission of Paradigm Systems.
+1   343				     ; *********************************************************************
+1   344				     ;
+1   345				     ; This include file helps set the memory model variables and defines
+1   346				     ; data structures used by Borland/Tubro C++ assembly language modules.
+1   347				     ;
+1   348
+1   349				     IFDEF   ??Version			     ; Check for TASM
+1   350				     NOWARN  RES			     ; Turn off	reserved words warnings
+1   351				     ENDIF   ; ??Version
+1   352
+1   353				     ;
+1   354				     ; This macro is used to display comments during assembly
+1   355				     ;
+1   356				     SHOW    macro   msg
+1   357				     IFDEF   ??Version			     ; Check if	TASM is	doing the work
+1   358				     NOWARN  PDC			     ; Disable pass 1 warnings for TASM
+1   359				     ENDIF   ; ??Version
+1   360				     IF1
+1   361					     %out    msg
+1   362				     ENDIF   ; IF1
+1   363				     IFDEF   ??Version
+1   364				     WARN    PDC			     ; Turn warnings back on
+1   365				     ENDIF   ; ??Version
+1   366					     endm
+1   367
+1   368				     ;
+1   369				     ; Determine the memory module begin used and define values	which can
+1   370				     ; be tested later.	 This section appears after the	default	segment
+1   371				     ; declarations to avoid any problems with changing	the default alignment
+1   372				     ; characteristics.
+1   373				     ;
+1   374				     IFDEF	     __s__
+1   375					     @CodeSize = 0
+1   376					     @DataSize = 0
+1   377					     pptr    equ     near ptr
+1   378					     SHOW    <Assembling for the small memory model>
+1   379				     ELSEIFDEF	     __m__
+1   380					     @CodeSize = 1
+1   381					     @DataSize = 0
+1   382					     pptr    equ     far ptr
+1   383					     SHOW    <Assembling for the medium	memory model>
+1   384				     ELSEIFDEF	     __c__
+1   385					     @CodeSize = 0
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 8
+boot\bcpp31\bcpp31.asm
+
+
+
+1   386					     @DataSize = 1
+1   387					     pptr    equ     near ptr
+1   388					     SHOW    <Assembling for the compact memory	model>
+1   389				     ELSEIFDEF	     __l__
+1   390	      =0001			     @CodeSize = 1
+1   391	      =0001			     @DataSize = 1
+1   392	      =	far ptr			     pptr    equ     far ptr
+1   393					     SHOW    <Assembling for the large memory model>
+2   394				     IFDEF   ??Version			     ; Check if	TASM is	doing the work
+2   395				     NOWARN  PDC			     ; Disable pass 1 warnings for TASM
+2   396				     ENDIF   ; ??Version
+2   397				     IF1
+2   398					     %out    Assembling	for the	large memory model
+2   399				     ENDIF   ; IF1
+2   400				     IFDEF   ??Version
+2   401				     WARN    PDC			     ; Turn warnings back on
+2   402				     ENDIF   ; ??Version
+1   403				     ELSEIFDEF	     __h__
+1   404					     @CodeSize = 2
+1   405					     @DataSize = 2
+1   406					     pptr    equ     far ptr
+1   407					     SHOW    <Assembling for the huge memory model>
+1   408				     ELSE
+1   409					     @CodeSize = 0
+1   410					     @DataSize = 0
+1   411					     pptr    equ     near ptr
+1   412					     SHOW    <Assembler	error: Missing memory model macro definition>
+1   413				     ;	     .ERR
+1   414				     ENDIF   ; IFDEF
+1   415
+1   416
+1   417				     ;
+1   418				     ; Initializer/terminator structure	format.	 This is used by the
+1   419				     ; startup code to automatically initialize	run-time library packages.
+1   420				     ;
+1   421
+1   422	*000			     InitRec	     struc
+1   423	*000  01*(??)		     ctype	     db	     ?		     ; 0=near, 1=far, 0ffh=not used
+1   424	*001  01*(??)		     pri	     db	     ?		     ; 0=highest, 0ffh=lowest
+1   425	*002  01*(????)		     foff	     dw	     ?		     ; Function	offset
+1   426	*004  01*(????)		     fseg	     dw	     ?		     ; Function	segment
+1   427	*006			     InitRec	     ends
+1   428
+1   429					     .list
+1   430
+    431
+    432					     SHOW    <Paradigm LOCATE Borland C++ 3.1 Startup Support>
+1   433				     IFDEF   ??Version			     ; Check if	TASM is	doing the work
+1   434				     NOWARN  PDC			     ; Disable pass 1 warnings for TASM
+1   435				     ENDIF   ; ??Version
+1   436				     IF1
+1   437					     %out    Paradigm LOCATE Borland C++ 3.1 Startup Support
+1   438				     ENDIF   ; IF1
+1   439				     IFDEF   ??Version
+1   440				     WARN    PDC			     ; Turn warnings back on
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 9
+boot\bcpp31\bcpp31.asm
+
+
+
+1   441				     ENDIF   ; ??Version
+    442				     IFDEF   PDREMOTE
+    443					     SHOW    <Building Paradigm	PDREMOTE-compatible startup code>
+    444				     ENDIF   ; PDREMOTE
+    445
+    446					     subttl  Segment ordering/alignment	section
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 10
+boot\bcpp31\bcpp31.asm
+
+
+
+    447					     page
+    448				     ;
+    449				     ; Segment and group declarations.	The order of these declarations	is
+    450				     ; used to control the order of segments in	the .ROM file since the
+    451				     ; Microsoft and Borland linkers copy segments in the same order they
+    452				     ; are encountered in the object files.
+    453				     ;
+    454				     ; Make sure that this startup module is specified first when linking
+    455				     ; the application.
+    456				     ;
+    457
+    458				     DefSeg  _TEXT,	 para,	public,	 CODE,	     <>	     ; Default code
+1   459				     .errb   <_TEXT>
+1   460				     .errb   <para>
+1   461				     .errb   <public>
+1   462				     .errb   <CODE>
+1   463	0000			     _TEXT   segment para    public  'CODE'
+1   464	0000			     _TEXT   ends
+1   465				     ifnb    <>
+1   466					     group   _TEXT
+1   467				     endif
+    468
+    469
+    470				     ;
+    471				     ; The following segments are used to hold the linked initializers
+    472				     ; and terminators.	 These permit automatic	initialization of code
+    473				     ; without startup source modification and should be located in ROM.
+    474				     ; Terminators are not implemented since an	application will normally
+    475				     ; not return to the startup code but are supported	for run-time library
+    476				     ; compatibility.
+    477				     ;
+    478
+    479				     DefSeg  _INIT_,	 para,	public,	 INITDATA,   IGROUP  ; Initializers
+1   480				     .errb   <_INIT_>
+1   481				     .errb   <para>
+1   482				     .errb   <public>
+1   483				     .errb   <INITDATA>
+1   484	0000			     _INIT_  segment para    public  'INITDATA'
+1   485	0000			     _INIT_  ends
+1   486				     ifnb    <IGROUP>
+1   487				     IGROUP  group   _INIT_
+1   488				     endif
+    489				     DefSeg  _INITEND_,	 byte,	public,	 INITDATA,   IGROUP
+1   490				     .errb   <_INITEND_>
+1   491				     .errb   <byte>
+1   492				     .errb   <public>
+1   493				     .errb   <INITDATA>
+1   494	0000			     _INITEND_	     segment byte    public  'INITDATA'
+1   495	0000			     _INITEND_	     ends
+1   496				     ifnb    <IGROUP>
+1   497				     IGROUP  group   _INITEND_
+1   498				     endif
+    499				     DefSeg  _EXIT_,	 dword,	public,	 EXITDATA,   IGROUP  ; Terminators
+1   500				     .errb   <_EXIT_>
+1   501				     .errb   <dword>
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 11
+boot\bcpp31\bcpp31.asm
+
+
+
+1   502				     .errb   <public>
+1   503				     .errb   <EXITDATA>
+1   504	0000			     _EXIT_  segment dword   public  'EXITDATA'
+1   505	0000			     _EXIT_  ends
+1   506				     ifnb    <IGROUP>
+1   507				     IGROUP  group   _EXIT_
+1   508				     endif
+    509				     DefSeg  _EXITEND_,	 byte,	public,	 EXITDATA,   IGROUP
+1   510				     .errb   <_EXITEND_>
+1   511				     .errb   <byte>
+1   512				     .errb   <public>
+1   513				     .errb   <EXITDATA>
+1   514	0000			     _EXITEND_	     segment byte    public  'EXITDATA'
+1   515	0000			     _EXITEND_	     ends
+1   516				     ifnb    <IGROUP>
+1   517				     IGROUP  group   _EXITEND_
+1   518				     endif
+    519
+    520
+    521				     ;
+    522				     ; The following segments are used to mark the place for ROM copies
+    523				     ; of initialized data for use by the startup code.
+    524				     ;
+    525
+    526				     DefSeg  _rd,	 para,	public,	 ROMDATA,    <>
+1   527				     .errb   <_rd>
+1   528				     .errb   <para>
+1   529				     .errb   <public>
+1   530				     .errb   <ROMDATA>
+1   531	0000			     _rd     segment para    public  'ROMDATA'
+1   532	0000			     _rd     ends
+1   533				     ifnb    <>
+1   534					     group   _rd
+1   535				     endif
+    536				     DefSeg  _erd,	 para,	public,	 ENDROMDATA, <>
+1   537				     .errb   <_erd>
+1   538				     .errb   <para>
+1   539				     .errb   <public>
+1   540				     .errb   <ENDROMDATA>
+1   541	0000			     _erd    segment para    public  'ENDROMDATA'
+1   542	0000			     _erd    ends
+1   543				     ifnb    <>
+1   544					     group   _erd
+1   545				     endif
+    546
+    547
+    548				     ;
+    549				     ; The following segments form the Borland C++ DGROUP.  The	startup	code
+    550				     ; requires	that the segments in DGROUP follow the Borland C++ standard.
+    551				     ; The order of these segments/classes must	not be changed since the
+    552				     ; startup code assumes a specific relationship between classes.
+    553				     ;
+    554				     ; CONST segment/class is specific to Microsoft DGROUP.  It	is generally
+    555				     ; not needed by Borland compiler.	If necessary, uncomment	the DegSeg
+    556				     ; for CONST and add the followings	to your	LOCATE configuration file:
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 12
+boot\bcpp31\bcpp31.asm
+
+
+
+    557				     ;
+    558				     ;	     dup     DATA ROMDATA
+    559				     ;	     dup     CONST ROMDATA
+    560				     ;
+    561				     ;	     order   DATA CONST	BSS BSSEND STACK ...
+    562				     ;
+    563
+    564				     DefSeg  _DATA,	 para,	public,	 DATA,	     DGROUP  ; Initialized data
+1   565				     .errb   <_DATA>
+1   566				     .errb   <para>
+1   567				     .errb   <public>
+1   568				     .errb   <DATA>
+1   569	0000			     _DATA   segment para    public  'DATA'
+1   570	0000			     _DATA   ends
+1   571				     ifnb    <DGROUP>
+1   572				     DGROUP  group   _DATA
+1   573				     endif
+    574				     ;DefSeg CONST,	 word,	public,	 CONST,	     DGROUP
+    575				     DefSeg  _BSS,	 word,	public,	 BSS,	     DGROUP  ; Uninitialized data
+1   576				     .errb   <_BSS>
+1   577				     .errb   <word>
+1   578				     .errb   <public>
+1   579				     .errb   <BSS>
+1   580	0000			     _BSS    segment word    public  'BSS'
+1   581	0000			     _BSS    ends
+1   582				     ifnb    <DGROUP>
+1   583				     DGROUP  group   _BSS
+1   584				     endif
+    585				     DefSeg  _BSSEND,	 word,	public,	 BSSEND,     DGROUP  ; End of uninitialized data
+1   586				     .errb   <_BSSEND>
+1   587				     .errb   <word>
+1   588				     .errb   <public>
+1   589				     .errb   <BSSEND>
+1   590	0000			     _BSSEND segment word    public  'BSSEND'
+1   591	0000			     _BSSEND ends
+1   592				     ifnb    <DGROUP>
+1   593				     DGROUP  group   _BSSEND
+1   594				     endif
+    595
+    596				     ;
+    597				     ; The stack in Borland C++	is in or out of	DGROUP depending on the
+    598				     ; memory model.
+    599				     ;
+    600
+    601				     IF	     @DataSize EQ MM_NEAR
+    602				     DefSeg  _STACK,	 para,	stack,	 STACK,	     DGROUP  ; Stack is	in DGROUP
+    603				     ELSE
+    604				     DefSeg  _STACK,	 para,	stack,	 STACK,	     <>	     ; Stack is	not in DGROUP
+1   605				     .errb   <_STACK>
+1   606				     .errb   <para>
+1   607				     .errb   <stack>
+1   608				     .errb   <STACK>
+1   609	0000			     _STACK  segment para    stack   'STACK'
+1   610	0000			     _STACK  ends
+1   611				     ifnb    <>
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 13
+boot\bcpp31\bcpp31.asm
+
+
+
+1   612					     group   _STACK
+1   613				     endif
+    614				     ENDIF   ; MM_NEAR
+    615
+    616
+    617				     ;
+    618				     ; Constants used for huge pointer arithmetic
+    619				     ;
+    620					     public  __AHINCR, __AHSHIFT
+    621	      =1000		     __AHINCR	     equ     1000h
+    622	      =000C		     __AHSHIFT	     equ     12
+    623
+    624
+    625				     ;
+    626				     ; External	references
+    627				     ;
+    628				     ExtProc main			     ; User application	entry point
+1   629				     .errb   <main>
+1   630				     ifb     <>
+1   631				     if	     @CodeSize EQ 0
+1   632				     extrn   _main : near
+1   633				     else
+1   634				     extrn   _main : far
+1   635				     endif
+1   636				     else
+1   637				     extrn   _main :
+1   638				     endif
+1   639				     main    equ     _main
+    640				     ;ExtProc	     loader	 ; 20120705 xu add
+    641
+    642					     subttl  Startup/initialization code
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 14
+boot\bcpp31\bcpp31.asm
+
+
+
+    643					     page
+    644	0000			     _TEXT   segment
+    645					     assume  cs:_TEXT
+    646
+    647				     ;½«_TEXT´Õ³É4096
+    648						     PUBLIC  _ip_udp_data_test
+    649	0000			     _ip_udp_data_test	     label   byte
+    650	0000  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    651	      00 00 00 00 00 00	00+  00h, 00h
+    652	      00 00
+    653	0010  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    654	      00 00 00 00 00 00	00+  00h, 00h
+    655	      00 00
+    656	0020  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    657	      00 00 00 00 00 00	00+  00h, 00h
+    658	      00 00
+    659	0030  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    660	      00 00 00 00 00 00	00+  00h, 00h
+    661	      00 00
+    662	0040  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    663	      00 00 00 00 00 00	00+  00h, 00h
+    664	      00 00
+    665	0050  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    666	      00 00 00 00 00 00	00+  00h, 00h
+    667	      00 00
+    668	0060  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    669	      00 00 00 00 00 00	00+  00h, 00h
+    670	      00 00
+    671	0070  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    672	      00 00 00 00 00 00	00+  00h, 00h
+    673	      00 00
+    674	0080  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    675	      00 00 00 00 00 00	00+  00h, 00h
+    676	      00 00
+    677	0090  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    678	      00 00 00 00 00 00	00+  00h, 00h
+    679	      00 00
+    680	00A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    681	      00 00 00 00 00 00	00+  00h, 00h
+    682	      00 00
+    683	00B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    684	      00 00 00 00 00 00	00+  00h, 00h
+    685	      00 00
+    686	00C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    687	      00 00 00 00 00 00	00+  00h, 00h
+    688	      00 00
+    689	00D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    690	      00 00 00 00 00 00	00+  00h, 00h
+    691	      00 00
+    692	00E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    693	      00 00 00 00 00 00	00+  00h, 00h
+    694	      00 00
+    695	00F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    696	      00 00 00 00 00 00	00+  00h, 00h
+    697	      00 00
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 15
+boot\bcpp31\bcpp31.asm
+
+
+
+    698	0100  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    699	      00 00 00 00 00 00	00+  00h, 00h
+    700	      00 00
+    701	0110  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    702	      00 00 00 00 00 00	00+  00h, 00h
+    703	      00 00
+    704	0120  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    705	      00 00 00 00 00 00	00+  00h, 00h
+    706	      00 00
+    707	0130  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    708	      00 00 00 00 00 00	00+  00h, 00h
+    709	      00 00
+    710	0140  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    711	      00 00 00 00 00 00	00+  00h, 00h
+    712	      00 00
+    713	0150  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    714	      00 00 00 00 00 00	00+  00h, 00h
+    715	      00 00
+    716	0160  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    717	      00 00 00 00 00 00	00+  00h, 00h
+    718	      00 00
+    719	0170  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    720	      00 00 00 00 00 00	00+  00h, 00h
+    721	      00 00
+    722	0180  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    723	      00 00 00 00 00 00	00+  00h, 00h
+    724	      00 00
+    725	0190  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    726	      00 00 00 00 00 00	00+  00h, 00h
+    727	      00 00
+    728	01A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    729	      00 00 00 00 00 00	00+  00h, 00h
+    730	      00 00
+    731	01B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    732	      00 00 00 00 00 00	00+  00h, 00h
+    733	      00 00
+    734	01C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    735	      00 00 00 00 00 00	00+  00h, 00h
+    736	      00 00
+    737	01D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    738	      00 00 00 00 00 00	00+  00h, 00h
+    739	      00 00
+    740	01E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    741	      00 00 00 00 00 00	00+  00h, 00h
+    742	      00 00
+    743	01F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    744	      00 00 00 00 00 00	00+  00h, 00h
+    745	      00 00
+    746	0200  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    747	      00 00 00 00 00 00	00+  00h, 00h
+    748	      00 00
+    749	0210  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    750	      00 00 00 00 00 00	00+  00h, 00h
+    751	      00 00
+    752	0220  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 16
+boot\bcpp31\bcpp31.asm
+
+
+
+    753	      00 00 00 00 00 00	00+  00h, 00h
+    754	      00 00
+    755	0230  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    756	      00 00 00 00 00 00	00+  00h, 00h
+    757	      00 00
+    758	0240  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    759	      00 00 00 00 00 00	00+  00h, 00h
+    760	      00 00
+    761	0250  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    762	      00 00 00 00 00 00	00+  00h, 00h
+    763	      00 00
+    764	0260  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    765	      00 00 00 00 00 00	00+  00h, 00h
+    766	      00 00
+    767	0270  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    768	      00 00 00 00 00 00	00+  00h, 00h
+    769	      00 00
+    770	0280  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    771	      00 00 00 00 00 00	00+  00h, 00h
+    772	      00 00
+    773	0290  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    774	      00 00 00 00 00 00	00+  00h, 00h
+    775	      00 00
+    776	02A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    777	      00 00 00 00 00 00	00+  00h, 00h
+    778	      00 00
+    779	02B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    780	      00 00 00 00 00 00	00+  00h, 00h
+    781	      00 00
+    782	02C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    783	      00 00 00 00 00 00	00+  00h, 00h
+    784	      00 00
+    785	02D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    786	      00 00 00 00 00 00	00+  00h, 00h
+    787	      00 00
+    788	02E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    789	      00 00 00 00 00 00	00+  00h, 00h
+    790	      00 00
+    791	02F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    792	      00 00 00 00 00 00	00+  00h, 00h
+    793	      00 00
+    794	0300  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    795	      00 00 00 00 00 00	00+  00h, 00h
+    796	      00 00
+    797	0310  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    798	      00 00 00 00 00 00	00+  00h, 00h
+    799	      00 00
+    800	0320  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    801	      00 00 00 00 00 00	00+  00h, 00h
+    802	      00 00
+    803	0330  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    804	      00 00 00 00 00 00	00+  00h, 00h
+    805	      00 00
+    806	0340  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    807	      00 00 00 00 00 00	00+  00h, 00h
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 17
+boot\bcpp31\bcpp31.asm
+
+
+
+    808	      00 00
+    809	0350  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    810	      00 00 00 00 00 00	00+  00h, 00h
+    811	      00 00
+    812	0360  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    813	      00 00 00 00 00 00	00+  00h, 00h
+    814	      00 00
+    815	0370  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    816	      00 00 00 00 00 00	00+  00h, 00h
+    817	      00 00
+    818	0380  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    819	      00 00 00 00 00 00	00+  00h, 00h
+    820	      00 00
+    821	0390  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    822	      00 00 00 00 00 00	00+  00h, 00h
+    823	      00 00
+    824	03A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    825	      00 00 00 00 00 00	00+  00h, 00h
+    826	      00 00
+    827	03B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    828	      00 00 00 00 00 00	00+  00h, 00h
+    829	      00 00
+    830	03C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    831	      00 00 00 00 00 00	00+  00h, 00h
+    832	      00 00
+    833	03D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    834	      00 00 00 00 00 00	00+  00h, 00h
+    835	      00 00
+    836	03E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    837	      00 00 00 00 00 00	00+  00h, 00h
+    838	      00 00
+    839	03F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    840	      00 00 00 00 00 00	00+  00h, 00h
+    841	      00 00
+    842	0400  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    843	      00 00 00 00 00 00	00+  00h, 00h
+    844	      00 00
+    845	0410  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    846	      00 00 00 00 00 00	00+  00h, 00h
+    847	      00 00
+    848	0420  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    849	      00 00 00 00 00 00	00+  00h, 00h
+    850	      00 00
+    851	0430  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    852	      00 00 00 00 00 00	00+  00h, 00h
+    853	      00 00
+    854	0440  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    855	      00 00 00 00 00 00	00+  00h, 00h
+    856	      00 00
+    857	0450  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    858	      00 00 00 00 00 00	00+  00h, 00h
+    859	      00 00
+    860	0460  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    861	      00 00 00 00 00 00	00+  00h, 00h
+    862	      00 00
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 18
+boot\bcpp31\bcpp31.asm
+
+
+
+    863	0470  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    864	      00 00 00 00 00 00	00+  00h, 00h
+    865	      00 00
+    866	0480  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    867	      00 00 00 00 00 00	00+  00h, 00h
+    868	      00 00
+    869	0490  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    870	      00 00 00 00 00 00	00+  00h, 00h
+    871	      00 00
+    872	04A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    873	      00 00 00 00 00 00	00+  00h, 00h
+    874	      00 00
+    875	04B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    876	      00 00 00 00 00 00	00+  00h, 00h
+    877	      00 00
+    878	04C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    879	      00 00 00 00 00 00	00+  00h, 00h
+    880	      00 00
+    881	04D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    882	      00 00 00 00 00 00	00+  00h, 00h
+    883	      00 00
+    884	04E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    885	      00 00 00 00 00 00	00+  00h, 00h
+    886	      00 00
+    887	04F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    888	      00 00 00 00 00 00	00+  00h, 00h
+    889	      00 00
+    890	0500  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    891	      00 00 00 00 00 00	00+  00h, 00h
+    892	      00 00
+    893	0510  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    894	      00 00 00 00 00 00	00+  00h, 00h
+    895	      00 00
+    896	0520  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    897	      00 00 00 00 00 00	00+  00h, 00h
+    898	      00 00
+    899	0530  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    900	      00 00 00 00 00 00	00+  00h, 00h
+    901	      00 00
+    902	0540  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    903	      00 00 00 00 00 00	00+  00h, 00h
+    904	      00 00
+    905	0550  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    906	      00 00 00 00 00 00	00+  00h, 00h
+    907	      00 00
+    908	0560  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    909	      00 00 00 00 00 00	00+  00h, 00h
+    910	      00 00
+    911	0570  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    912	      00 00 00 00 00 00	00+  00h, 00h
+    913	      00 00
+    914	0580  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    915	      00 00 00 00 00 00	00+  00h, 00h
+    916	      00 00
+    917	0590  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 19
+boot\bcpp31\bcpp31.asm
+
+
+
+    918	      00 00 00 00 00 00	00+  00h, 00h
+    919	      00 00
+    920	05A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    921	      00 00 00 00 00 00	00+  00h, 00h
+    922	      00 00
+    923	05B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    924	      00 00 00 00 00 00	00+  00h, 00h
+    925	      00 00
+    926	05C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    927	      00 00 00 00 00 00	00+  00h, 00h
+    928	      00 00
+    929	05D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    930	      00 00 00 00 00 00	00+  00h, 00h
+    931	      00 00
+    932	05E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    933	      00 00 00 00 00 00	00+  00h, 00h
+    934	      00 00
+    935	05F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    936	      00 00 00 00 00 00	00+  00h, 00h
+    937	      00 00
+    938	0600  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    939	      00 00 00 00 00 00	00+  00h, 00h
+    940	      00 00
+    941	0610  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    942	      00 00 00 00 00 00	00+  00h, 00h
+    943	      00 00
+    944	0620  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    945	      00 00 00 00 00 00	00+  00h, 00h
+    946	      00 00
+    947	0630  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    948	      00 00 00 00 00 00	00+  00h, 00h
+    949	      00 00
+    950	0640  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    951	      00 00 00 00 00 00	00+  00h, 00h
+    952	      00 00
+    953	0650  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    954	      00 00 00 00 00 00	00+  00h, 00h
+    955	      00 00
+    956	0660  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    957	      00 00 00 00 00 00	00+  00h, 00h
+    958	      00 00
+    959	0670  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    960	      00 00 00 00 00 00	00+  00h, 00h
+    961	      00 00
+    962	0680  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    963	      00 00 00 00 00 00	00+  00h, 00h
+    964	      00 00
+    965	0690  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    966	      00 00 00 00 00 00	00+  00h, 00h
+    967	      00 00
+    968	06A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    969	      00 00 00 00 00 00	00+  00h, 00h
+    970	      00 00
+    971	06B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    972	      00 00 00 00 00 00	00+  00h, 00h
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 20
+boot\bcpp31\bcpp31.asm
+
+
+
+    973	      00 00
+    974	06C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    975	      00 00 00 00 00 00	00+  00h, 00h
+    976	      00 00
+    977	06D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    978	      00 00 00 00 00 00	00+  00h, 00h
+    979	      00 00
+    980	06E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    981	      00 00 00 00 00 00	00+  00h, 00h
+    982	      00 00
+    983	06F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    984	      00 00 00 00 00 00	00+  00h, 00h
+    985	      00 00
+    986	0700  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    987	      00 00 00 00 00 00	00+  00h, 00h
+    988	      00 00
+    989	0710  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    990	      00 00 00 00 00 00	00+  00h, 00h
+    991	      00 00
+    992	0720  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    993	      00 00 00 00 00 00	00+  00h, 00h
+    994	      00 00
+    995	0730  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    996	      00 00 00 00 00 00	00+  00h, 00h
+    997	      00 00
+    998	0740  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+    999	      00 00 00 00 00 00	00+  00h, 00h
+   1000	      00 00
+   1001	0750  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1002	      00 00 00 00 00 00	00+  00h, 00h
+   1003	      00 00
+   1004	0760  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1005	      00 00 00 00 00 00	00+  00h, 00h
+   1006	      00 00
+   1007	0770  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1008	      00 00 00 00 00 00	00+  00h, 00h
+   1009	      00 00
+   1010	0780  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1011	      00 00 00 00 00 00	00+  00h, 00h
+   1012	      00 00
+   1013	0790  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1014	      00 00 00 00 00 00	00+  00h, 00h
+   1015	      00 00
+   1016	07A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1017	      00 00 00 00 00 00	00+  00h, 00h
+   1018	      00 00
+   1019	07B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1020	      00 00 00 00 00 00	00+  00h, 00h
+   1021	      00 00
+   1022	07C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1023	      00 00 00 00 00 00	00+  00h, 00h
+   1024	      00 00
+   1025	07D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1026	      00 00 00 00 00 00	00+  00h, 00h
+   1027	      00 00
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 21
+boot\bcpp31\bcpp31.asm
+
+
+
+   1028	07E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1029	      00 00 00 00 00 00	00+  00h, 00h
+   1030	      00 00
+   1031	07F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1032	      00 00 00 00 00 00	00+  00h, 00h
+   1033	      00 00
+   1034	0800  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1035	      00 00 00 00 00 00	00+  00h, 00h
+   1036	      00 00
+   1037	0810  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1038	      00 00 00 00 00 00	00+  00h, 00h
+   1039	      00 00
+   1040	0820  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1041	      00 00 00 00 00 00	00+  00h, 00h
+   1042	      00 00
+   1043	0830  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1044	      00 00 00 00 00 00	00+  00h, 00h
+   1045	      00 00
+   1046	0840  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1047	      00 00 00 00 00 00	00+  00h, 00h
+   1048	      00 00
+   1049	0850  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1050	      00 00 00 00 00 00	00+  00h, 00h
+   1051	      00 00
+   1052	0860  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1053	      00 00 00 00 00 00	00+  00h, 00h
+   1054	      00 00
+   1055	0870  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1056	      00 00 00 00 00 00	00+  00h, 00h
+   1057	      00 00
+   1058	0880  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1059	      00 00 00 00 00 00	00+  00h, 00h
+   1060	      00 00
+   1061	0890  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1062	      00 00 00 00 00 00	00+  00h, 00h
+   1063	      00 00
+   1064	08A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1065	      00 00 00 00 00 00	00+  00h, 00h
+   1066	      00 00
+   1067	08B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1068	      00 00 00 00 00 00	00+  00h, 00h
+   1069	      00 00
+   1070	08C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1071	      00 00 00 00 00 00	00+  00h, 00h
+   1072	      00 00
+   1073	08D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1074	      00 00 00 00 00 00	00+  00h, 00h
+   1075	      00 00
+   1076	08E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1077	      00 00 00 00 00 00	00+  00h, 00h
+   1078	      00 00
+   1079	08F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1080	      00 00 00 00 00 00	00+  00h, 00h
+   1081	      00 00
+   1082	0900  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 22
+boot\bcpp31\bcpp31.asm
+
+
+
+   1083	      00 00 00 00 00 00	00+  00h, 00h
+   1084	      00 00
+   1085	0910  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1086	      00 00 00 00 00 00	00+  00h, 00h
+   1087	      00 00
+   1088	0920  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1089	      00 00 00 00 00 00	00+  00h, 00h
+   1090	      00 00
+   1091	0930  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1092	      00 00 00 00 00 00	00+  00h, 00h
+   1093	      00 00
+   1094	0940  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1095	      00 00 00 00 00 00	00+  00h, 00h
+   1096	      00 00
+   1097	0950  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1098	      00 00 00 00 00 00	00+  00h, 00h
+   1099	      00 00
+   1100	0960  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1101	      00 00 00 00 00 00	00+  00h, 00h
+   1102	      00 00
+   1103	0970  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1104	      00 00 00 00 00 00	00+  00h, 00h
+   1105	      00 00
+   1106	0980  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1107	      00 00 00 00 00 00	00+  00h, 00h
+   1108	      00 00
+   1109	0990  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1110	      00 00 00 00 00 00	00+  00h, 00h
+   1111	      00 00
+   1112	09A0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1113	      00 00 00 00 00 00	00+  00h, 00h
+   1114	      00 00
+   1115	09B0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1116	      00 00 00 00 00 00	00+  00h, 00h
+   1117	      00 00
+   1118	09C0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1119	      00 00 00 00 00 00	00+  00h, 00h
+   1120	      00 00
+   1121	09D0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1122	      00 00 00 00 00 00	00+  00h, 00h
+   1123	      00 00
+   1124	09E0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1125	      00 00 00 00 00 00	00+  00h, 00h
+   1126	      00 00
+   1127	09F0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1128	      00 00 00 00 00 00	00+  00h, 00h
+   1129	      00 00
+   1130	0A00  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1131	      00 00 00 00 00 00	00+  00h, 00h
+   1132	      00 00
+   1133	0A10  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1134	      00 00 00 00 00 00	00+  00h, 00h
+   1135	      00 00
+   1136	0A20  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1137	      00 00 00 00 00 00	00+  00h, 00h
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 23
+boot\bcpp31\bcpp31.asm
+
+
+
+   1138	      00 00
+   1139	0A30  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1140	      00 00 00 00 00 00	00+  00h, 00h
+   1141	      00 00
+   1142	0A40  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1143	      00 00 00 00 00 00	00+  00h, 00h
+   1144	      00 00
+   1145	0A50  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1146	      00 00 00 00 00 00	00+  00h, 00h
+   1147	      00 00
+   1148	0A60  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1149	      00 00 00 00 00 00	00+  00h, 00h
+   1150	      00 00
+   1151	0A70  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1152	      00 00 00 00 00 00	00+  00h, 00h
+   1153	      00 00
+   1154	0A80  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1155	      00 00 00 00 00 00	00+  00h, 00h
+   1156	      00 00
+   1157	0A90  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1158	      00 00 00 00 00 00	00+  00h, 00h
+   1159	      00 00
+   1160	0AA0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1161	      00 00 00 00 00 00	00+  00h, 00h
+   1162	      00 00
+   1163	0AB0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1164	      00 00 00 00 00 00	00+  00h, 00h
+   1165	      00 00
+   1166	0AC0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1167	      00 00 00 00 00 00	00+  00h, 00h
+   1168	      00 00
+   1169	0AD0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1170	      00 00 00 00 00 00	00+  00h, 00h
+   1171	      00 00
+   1172	0AE0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1173	      00 00 00 00 00 00	00+  00h, 00h
+   1174	      00 00
+   1175	0AF0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1176	      00 00 00 00 00 00	00+  00h, 00h
+   1177	      00 00
+   1178	0B00  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1179	      00 00 00 00 00 00	00+  00h, 00h
+   1180	      00 00
+   1181	0B10  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1182	      00 00 00 00 00 00	00+  00h, 00h
+   1183	      00 00
+   1184	0B20  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1185	      00 00 00 00 00 00	00+  00h, 00h
+   1186	      00 00
+   1187	0B30  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1188	      00 00 00 00 00 00	00+  00h, 00h
+   1189	      00 00
+   1190	0B40  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1191	      00 00 00 00 00 00	00+  00h, 00h
+   1192	      00 00
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 24
+boot\bcpp31\bcpp31.asm
+
+
+
+   1193	0B50  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1194	      00 00 00 00 00 00	00+  00h, 00h
+   1195	      00 00
+   1196	0B60  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1197	      00 00 00 00 00 00	00+  00h, 00h
+   1198	      00 00
+   1199	0B70  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1200	      00 00 00 00 00 00	00+  00h, 00h
+   1201	      00 00
+   1202	0B80  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1203	      00 00 00 00 00 00	00+  00h, 00h
+   1204	      00 00
+   1205	0B90  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1206	      00 00 00 00 00 00	00+  00h, 00h
+   1207	      00 00
+   1208	0BA0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1209	      00 00 00 00 00 00	00+  00h, 00h
+   1210	      00 00
+   1211	0BB0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1212	      00 00 00 00 00 00	00+  00h, 00h
+   1213	      00 00
+   1214	0BC0  00 00 00 00 00 00	00+		     db	     00h, 00h, 00h, 00h, 00h, 00h, 00h,	00h, 00h, 00h, 00h, 00h, 00h, 00h, +
+   1215	      00 00 00 00 00 00	00+  00h, 00h
+   1216	      00 00
+   1217	0BD0  00 00 00 00		 db  00h, 00h, 00h, 00h
+   1218
+   1219				     BegProc _startup, far		     ; Startup code entry point
+1  1220				     .errb   <_startup>
+1  1221				     ifb     <far>
+1  1222				     if	     @CodeSize EQ 0
+1  1223				     __startup	     proc    near
+1  1224				     else
+1  1225				     __startup	     proc    far
+1  1226				     endif
+1  1227				     else
+1  1228	0BD4			     __startup	     proc    far
+1  1229				     endif
+1  1230				     public  __startup
+1  1231				     _startup	     equ     __startup
+   1232				     IFDEF   PDREMOTE
+   1233				     ;
+   1234				     ; Check if	the segment registers have been	setup by DOS.  PDREMOTE	always
+   1235				     ; clears the DS/ES	segment	registers so it	can be used to check if	the
+   1236				     ; application is accidentally running under MS-DOS	instead	of PDREMOTE.
+   1237				     ;
+   1238					     mov     ax, es
+   1239					     or	     ax, ax
+   1240					     jz	     embedded
+   1241
+   1242					     push    cs
+   1243					     pop     ds
+   1244					     assume  ds:_TEXT
+   1245					     mov     dx, offset	errmsg
+   1246					     mov     ah, 09h
+   1247					     int     21h
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 25
+boot\bcpp31\bcpp31.asm
+
+
+
+   1248					     mov     ah, 04ch
+   1249					     int     21h
+   1250				     errmsg  db	     "Embedded application: DOS	not supported",	0ah, 0dh, '$'
+   1251				     embedded:
+   1252				     ENDIF   ; PDREMOTE
+   1253				     ;
+   1254				     ; Disable interrupts and force the	forward	direction
+   1255				     ;
+   1256	0BD4  FA			     cli
+   1257	0BD5  FC			     cld
+   1258				     ;
+   1259				     ; Set up the stack	according to the memory	model.	The default Borland
+   1260				     ; model is	to have	the stack after	the heap in the	small and medium
+   1261				     ; memory models.
+   1262				     ;
+   1263				     IF	     @DataSize EQ MM_NEAR
+   1264					     mov     ax, DGROUP
+   1265					     mov     ss, ax
+   1266					     mov     sp, offset	DGROUP:tos
+   1267					     assume  ss:DGROUP
+   1268				     ELSE
+   1269	0BD6  B8 0000s			     mov     ax, _STACK
+   1270	0BD9  8E D0			     mov     ss, ax
+   1271	0BDB  BC 1000r			     mov     sp, offset	tos
+   1272					     assume  ss:_STACK
+   1273				     ENDIF   ; @DataSize
+   1274
+   1275				     ;
+   1276				     ; Prepare the segment registers for initialization.  The initialized
+   1277				     ; data is assumed to have been located in the class ROMDATA which begins
+   1278				     ; with the	segment	_RD.
+   1279				     ;
+   1280	0BDE  B8 0000s			     mov     ax, DGROUP
+   1281	0BE1  8E C0			     mov     es, ax
+   1282	0BE3  B8 0000s			     mov     ax, _rd
+   1283	0BE6  8E D8			     mov     ds, ax
+   1284					     assume  ds:_rd, es:DGROUP
+   1285
+   1286				     ;
+   1287				     ; Copy DGROUP initialized data from its position in ROM to	the target
+   1288				     ; address in RAM.	Because	this is	a group, there is never	more than
+   1289				     ; 64K of data to copy.
+   1290				     ;
+   1291	0BE8  BE 0000r			     mov     si, offset	ridata
+   1292	0BEB  BF 0000r			     mov     di, offset	DGROUP:idata
+   1293	0BEE  B9 0000r			     mov     cx, offset	DGROUP:bdata
+   1294	0BF1  2B CF			     sub     cx, di
+   1295	0BF3  D1 E9			     shr     cx, 1
+   1296	0BF5  E3 02			     jcxz    $$1
+   1297	0BF7  F3> A5			     rep     movsw
+   1298	0BF9			     $$1:
+   1299
+   1300				     ;
+   1301				     ; Zero out	the BSS	area
+   1302				     ;
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 26
+boot\bcpp31\bcpp31.asm
+
+
+
+   1303	0BF9  B8 0000s			     mov     ax, DGROUP
+   1304	0BFC  8E D8			     mov     ds, ax
+   1305	0BFE  8E C0			     mov     es, ax
+   1306					     assume  ds:DGROUP,	es:DGROUP
+   1307
+   1308	0C00  33 C0			     xor     ax, ax
+   1309	0C02  BF 0000r			     mov     di, offset	DGROUP:bdata
+   1310	0C05  B9 0002r			     mov     cx, offset	DGROUP:EDATA
+   1311	0C08  2B CF			     sub     cx, di
+   1312	0C0A  D1 E9			     shr     cx, 1
+   1313	0C0C  E3 02			     jcxz    $$9
+   1314	0C0E  F3> AB			     rep     stosw
+   1315	0C10			     $$9:
+   1316
+   1317				     ;
+   1318				     ; Call all	of the linked-in initializers in the _INIT_ segment.  These
+   1319				     ; are a series of pointers	to routines which are guaranteed to
+   1320				     ; execute before main() is	called.	 The advantage of this approach	is
+   1321				     ; that the	initialization will be made by virtue of the code being
+   1322				     ; linked in, without any modification to the startup code.
+   1323				     ;
+   1324				     ; This implementation permits the initializers to be kept in ROM,
+   1325				     ; even though there is no ordering	of the initializers.  The register
+   1326				     ; use is as follows:
+   1327				     ;	     SI	- initializers start
+   1328				     ;	     DI	- initializers end
+   1329				     ;	     CX	- number of initializers not processed
+   1330				     ;	     BX	- current initializer
+   1331				     ;	     AH	- current priority
+   1332				     ;
+   1333	0C10  BE 0000r			     mov     si, offset	IGROUP:InitStart
+   1334	0C13  BF 0000r			     mov     di, offset	IGROUP:InitEnd
+   1335	0C16  B8 0000s			     mov     ax, IGROUP
+   1336	0C19  8E C0			     mov     es, ax
+   1337					     assume  es:nothing
+   1338
+   1339	0C1B  8B C7			     mov     ax, di
+   1340	0C1D  2B C6			     sub     ax, si
+   1341	0C1F  2B D2			     sub     dx, dx
+   1342	0C21  B9 0006			     mov     cx, SIZE InitRec
+   1343	0C24  F7 F9			     idiv    cx
+   1344	0C26  8B C8			     mov     cx, ax		     ; Number of initializers in the table
+   1345	0C28  E3 36			     jcxz    InitDone
+   1346	0C2A  2A E4			     sub     ah, ah		     ; Start with the highest priority
+   1347
+   1348	0C2C			     PriTop:
+   1349	0C2C  8B DE			     mov     bx, si		     ; Point to	the start of the table
+   1350
+   1351	0C2E			     NextInit:
+   1352	0C2E  3B DF			     cmp     bx, di		     ; Check if	this pass is done
+   1353	0C30  73 2A			     jae     PriBottom
+   1354	0C32  26: 38 67	01		     cmp     es:[bx.pri], ah	     ; Compare against the current priority
+   1355	0C36  75 1F			     jne     TableBottom
+   1356
+   1357	0C38  06			     push    es
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 27
+boot\bcpp31\bcpp31.asm
+
+
+
+   1358	0C39  50			     push    ax
+   1359	0C3A  53			     push    bx
+   1360	0C3B  51			     push    cx
+   1361	0C3C  56			     push    si
+   1362	0C3D  57			     push    di
+   1363	0C3E  26: 80 3F	00		     cmp     es:[bx.ctype], MM_NEAR  ; Is it near or far?
+   1364	0C42  74 06			     je	     @@NearCall
+   1365	0C44  26: FF 5F	02		     call    dptr es:[bx.foff]	     ; Call the	initializer
+   1366	0C48  EB 04			     jmp     short $$14
+   1367	0C4A			     @@NearCall:
+   1368	0C4A  26: FF 57	02		     call    wptr es:[bx.foff]	     ; Call the	initializer
+   1369	0C4E			     $$14:
+   1370	0C4E  5F			     pop     di
+   1371	0C4F  5E			     pop     si
+   1372	0C50  59			     pop     cx
+   1373	0C51  5B			     pop     bx
+   1374	0C52  58			     pop     ax
+   1375	0C53  07			     pop     es
+   1376	0C54  49			     dec     cx
+   1377	0C55  74 09			     jz	     InitDone
+   1378
+   1379	0C57			     TableBottom:
+   1380	0C57  83 C3 06			     add     bx, SIZE InitRec
+   1381	0C5A  EB D2			     jmp     NextInit
+   1382
+   1383	0C5C			     PriBottom:
+   1384	0C5C  FE C4			     inc     ah			     ; Process the next	priority
+   1385	0C5E  EB CC			     jmp     PriTop
+   1386	0C60			     InitDone:
+   1387
+   1388				     ;
+   1389				     ; Call the	C/C++ entry point main() - initialization is complete and user
+   1390				     ; application can take control.
+   1391				     ;
+   1392	0C60  33 ED			     xor     bp, bp
+   1393				     ;	     call    Far Ptr _loader  ;	20120705 xu add
+   1394	0C62  9A 00000000se		     call    Far Ptr _main
+   1395
+   1396				     ;
+   1397				     ; A return	from main() is application dependent.  If PDREMOTE is being used,
+   1398				     ; we return the contents of AX as the application exit code; otherwise,
+   1399				     ; the user	must decide how	to handle this condition.
+   1400				     ;
+   1401				     IFNDEF  PDREMOTE
+   1402	0C67  E9 FF6A			     jmp     _startup		     ; *** Application dependent ***
+   1403				     ELSE
+   1404				     ;
+   1405				     ; Hand over control to the	exit handler, passing any exit code returned
+   1406				     ; by the application.
+   1407				     ;
+   1408					     and     ax, 7fh
+   1409					     push    ax
+   1410					     xor     bx, bx
+   1411					     mov     es, bx
+   1412					     pushf
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 28
+boot\bcpp31\bcpp31.asm
+
+
+
+   1413					     push    bx
+   1414					     push    bx
+   1415					     jmp     dptr es:[000ch]	     ; Call the	PDREMOTE break handler
+   1416				     ENDIF   ; PDREMOTE
+   1417				     EndProc _startup
+1  1418				     .errb   <_startup>
+1  1419	0C6A			     __startup	     endp
+   1420
+   1421	0C6A			     _TEXT   ends
+   1422
+   1423					     subttl  Data declarations
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 29
+boot\bcpp31\bcpp31.asm
+
+
+
+   1424					     page
+   1425				     ;
+   1426				     ; Run-time	libraries and other modules can	insert initializers in this
+   1427				     ; segment.	 Initializers are executed by priority,	and by link order
+   1428				     ; when the	same priority.	Static destructors are not implemented since
+   1429				     ; we assume that the application never terminates.
+   1430				     ;
+   1431
+   1432	0000			     _INIT_	     segment
+   1433				     LabelD  InitStart
+1  1434				     .errb   <InitStart>
+1  1435				     ifnb    <>
+1  1436				     public  _InitStart
+1  1437				     _InitStart	     label   dword
+1  1438				     InitStart	     equ     _InitStart
+1  1439				     else
+1  1440	0000			     InitStart	     label   dword
+1  1441				     endif   ; ifnb
+   1442	0000			     _INIT_	     ends
+   1443	0000			     _INITEND_	     segment
+   1444				     LabelD  InitEnd
+1  1445				     .errb   <InitEnd>
+1  1446				     ifnb    <>
+1  1447				     public  _InitEnd
+1  1448				     _InitEnd	     label   dword
+1  1449				     InitEnd equ     _InitEnd
+1  1450				     else
+1  1451	0000			     InitEnd label   dword
+1  1452				     endif   ; ifnb
+   1453	0000			     _INITEND_	     ends
+   1454	0000			     _EXIT_	     segment
+   1455				     LabelD  ExitStart
+1  1456				     .errb   <ExitStart>
+1  1457				     ifnb    <>
+1  1458				     public  _ExitStart
+1  1459				     _ExitStart	     label   dword
+1  1460				     ExitStart	     equ     _ExitStart
+1  1461				     else
+1  1462	0000			     ExitStart	     label   dword
+1  1463				     endif   ; ifnb
+   1464	0000			     _EXIT_	     ends
+   1465	0000			     _EXITEND_	     segment
+   1466				     LabelD  ExitEnd
+1  1467				     .errb   <ExitEnd>
+1  1468				     ifnb    <>
+1  1469				     public  _ExitEnd
+1  1470				     _ExitEnd	     label   dword
+1  1471				     ExitEnd equ     _ExitEnd
+1  1472				     else
+1  1473	0000			     ExitEnd label   dword
+1  1474				     endif   ; ifnb
+   1475	0000  10*(??)			     db	     16	dup (?)		     ; Force the next segment to a new paragraph
+   1476	0010			     _EXITEND_	     ends
+   1477
+   1478
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 30
+boot\bcpp31\bcpp31.asm
+
+
+
+   1479				     ;
+   1480				     ; These are the segment definitions for class DATA, BSS, BSSEND, and STACK.
+   1481				     ; Class DATA is special since offset 0 within it is potentially a NULL pointer.
+   1482				     ; Class BSSEND is used so we can compute the size of class	BSS here in the
+   1483				     ; startup code to know how	much we	must zero out.	Class BSSEND will also figure
+   1484				     ; in the definition of a near heap, if dynamic memory management support is
+   1485				     ; included	in the application.
+   1486				     ;
+   1487
+   1488	0000			     _DATA   segment
+   1489				     LabelB  idata			     ; Mark the	start of the DATA class
+1  1490				     .errb   <idata>
+1  1491				     ifnb    <>
+1  1492				     public  _idata
+1  1493				     _idata  label   byte
+1  1494				     idata   equ     _idata
+1  1495				     else
+1  1496	0000			     idata   label   byte
+1  1497				     endif
+   1498	0000  55AA		     null    dw	     055aah		     ; NULL address (within the	segment)
+   1499	0002			     _DATA   ends
+   1500
+   1501	0000			     _BSS    segment
+   1502				     LabelB  bdata			     ; Mark the	start of the BSS class
+1  1503				     .errb   <bdata>
+1  1504				     ifnb    <>
+1  1505				     public  _bdata
+1  1506				     _bdata  label   byte
+1  1507				     bdata   equ     _bdata
+1  1508				     else
+1  1509	0000			     bdata   label   byte
+1  1510				     endif
+   1511	0000			     _BSS    ends
+   1512
+   1513	0000			     _BSSEND segment			     ; BSS class end marker
+   1514				     public  EDATA
+   1515	0000  ????			     dw	     ?			     ; Give a fixed size for alignment
+   1516	0002			     EDATA   label   word		     ; Mark the	end of the BSS class
+   1517	0002			     _BSSEND ends
+   1518
+   1519	0000			     _STACK  segment
+   1520				     public  tos			     ; Make the	TOS visible to debuggers and ICE
+   1521				     IFDEF   STKSIZE
+   1522	0000  1000*(??)			     db	     STKSIZE dup (?)	     ; Setup the stack
+   1523	0002			     _DATA   segment
+   1524				     GlobalW _stklen, STKSIZE		     ; Needed for stack	checking logic
+1  1525				     .errb   <_stklen>
+1  1526				     ifnb    <STKSIZE>
+1  1527	0002  1000		     __stklen	     dw	     STKSIZE
+1  1528				     else
+1  1529				     __stklen	     dw	     ?
+1  1530				     endif
+1  1531				     public  __stklen
+1  1532				     _stklen equ     __stklen
+   1533	0004			     _DATA   ends
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 31
+boot\bcpp31\bcpp31.asm
+
+
+
+   1534				     ELSE
+   1535					     db	     8192 dup (?)	     ; Declare the stack size (in words)
+   1536				     _DATA   segment
+   1537				     GlobalW _stklen, 8192		     ; Needed for stack	checking logic
+   1538				     _DATA   ends
+   1539					     SHOW    <No stack size specified: stack size set to 8KB>
+   1540				     ENDIF
+   1541					     even			     ; Force word alignment
+   1542	1000			     tos     label   word		     ; Define the top of stack (the initial SP value)
+   1543	1000			     _STACK  ends
+   1544
+   1545
+   1546				     ;
+   1547				     ; These are segment definitions for the classes ROMDATA and ENDROMDATA.  Class
+   1548				     ; ROMDATA never contains anything (it is filled in	by a Paradigm LOCATE DUP
+   1549				     ; directive).  Class ENDROMDATA is	used to	mark the end of	class ROMDATA and
+   1550				     ; prevent a segment alias (since class ROMDATA will have zero length).
+   1551				     ;
+   1552				     ; NOTE: You can't take the	address	of segments in class ENDROMDATA	as they	are
+   1553				     ;	     aliased with class	ROMDATA.
+   1554				     ;
+   1555
+   1556	0000			     _rd     segment
+   1557				     LabelB  ridata			     ; Mark the	start of class ROMDATA
+1  1558				     .errb   <ridata>
+1  1559				     ifnb    <>
+1  1560				     public  _ridata
+1  1561				     _ridata label   byte
+1  1562				     ridata  equ     _ridata
+1  1563				     else
+1  1564	0000			     ridata  label   byte
+1  1565				     endif
+   1566	0000			     _rd     ends
+   1567	0000			     _erd    segment
+   1568	0000  10*(??)			     db	     16	dup (?)		     ; Force the next segment to a new paragraph
+   1569	0010			     _erd    ends
+   1570
+   1571					     end     _startup		     ; Program entry point
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 32
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+$$1				  Near	 _TEXT:0BF9
+$$14				  Near	 _TEXT:0C4E
+$$9				  Near	 _TEXT:0C10
+??DATE				  Text	 "14/08/11"
+??FILENAME			  Text	 "bcpp31  "
+??TIME				  Text	 "08:49:04"
+??VERSION			  Number 030A
+@@NEARCALL			  Near	 _TEXT:0C4A
+@CODESIZE			  Number 0001
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _ERD
+@DATASIZE			  Number 0001
+@FILENAME			  Text	 BCPP31
+@WORDSIZE			  Text	 2
+BDATA				  Byte	 _BSS:0000
+BPTR				  Text	 byte ptr
+DPTR				  Text	 dword ptr
+EDATA (EDATA)			  Word	 _BSSEND:0002
+EXITEND				  Dword	 _EXITEND_:0000
+EXITSTART			  Dword	 _EXIT_:0000
+FP87				  Number 0003
+FPALT				  Number 0001
+FPDFT				  Number 0000
+FPEMU				  Number 0002
+FPTR				  Text	 far ptr
+IDATA				  Byte	 _DATA:0000
+INITDONE			  Near	 _TEXT:0C60
+INITEND				  Dword	 _INITEND_:0000
+INITSTART			  Dword	 _INIT_:0000
+MAIN				  Alias	 _MAIN
+MM_FAR				  Number 0001
+MM_HUGE				  Number 0002
+MM_NEAR				  Number 0000
+NEXTINIT			  Near	 _TEXT:0C2E
+NPTR				  Text	 near ptr
+NULL				  Word	 _DATA:0000
+PDE_ABORT			  Number 00F6
+PDE_CHKIND			  Number 00F8
+PDE_DMMERR			  Number 00F3
+PDE_ESCOP			  Number 00FB
+PDE_FPEXCP			  Number 00F4
+PDE_ILLOP			  Number 00FA
+PDE_INTO			  Number 00F7
+PDE_IOTRAP			  Number 00F9
+PDE_PUREERR			  Number 00F2
+PDE_STKOVL			  Number 00F5
+PDE_ZERODIV			  Number 00FC
+PPTR				  Text	 far ptr
+PRIBOTTOM			  Near	 _TEXT:0C5C
+PRITOP				  Near	 _TEXT:0C2C
+PRI_DMM				  Number 0002
+PRI_FARDATA			  Number 0000
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 33
+Symbol Table
+
+
+
+PRI_FPU				  Number 0002
+PRI_INT21H			  Number 0001
+PRI_STDIO			  Number 0002
+QPTR				  Text	 qword ptr
+RIDATA				  Byte	 _RD:0000
+STKSIZE				  Text	 1000H
+TABLEBOTTOM			  Near	 _TEXT:0C57
+TOS (tos)			  Word	 _STACK:1000
+WPTR				  Text	 word ptr
+_IP_UDP_DATA_TEST	       +  Byte	 _TEXT:0000
+(_ip_udp_data_test)
+_MAIN (_main)			  Far	 ----:---- Extern
+_STARTUP			  Alias	 __STARTUP
+_STKLEN				  Alias	 __STKLEN
+__AHINCR (__AHINCR)		  Number 1000
+__AHSHIFT (__AHSHIFT)		  Number 000C
+__L__				  Text
+__STARTUP (__startup)		  Far	 _TEXT:0BD4
+__STKLEN (__stklen)		  Word	 _DATA:0002
+
+Macro Name
+
+BEGPROC
+DEFSEG
+ENDPROC
+EXTLBL
+EXTPROC
+GLOBALB
+GLOBALD
+GLOBALQ
+GLOBALW
+LABELB
+LABELD
+LABELQ
+LABELW
+LOCALB
+LOCALD
+LOCALQ
+LOCALW
+SHOW
+
+Structure Name			  Type	Offset
+
+INITREC
+ CTYPE				  Byte	 0000
+ PRI				  Byte	 0001
+ FOFF				  Word	 0002
+ FSEG				  Word	 0004
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _BSS				  16  0000 Word	  Public  BSS
+  _BSSEND			  16  0002 Word	  Public  BSSEND
+  _DATA				  16  0004 Para	  Public  DATA
+Turbo Assembler	 Version 3.1	    14/08/11 08:49:04	    Page 34
+Symbol Table
+
+
+
+IGROUP				  Group
+  _EXITEND_			  16  0010 Byte	  Public  EXITDATA
+  _EXIT_			  16  0000 Dword  Public  EXITDATA
+  _INITEND_			  16  0000 Byte	  Public  INITDATA
+  _INIT_			  16  0000 Para	  Public  INITDATA
+_ERD				  16  0010 Para	  Public  ENDROMDATA
+_RD				  16  0000 Para	  Public  ROMDATA
+_STACK				  16  1000 Para	  Stack	  STACK
+_TEXT				  16  0C6A Para	  Public  CODE
+

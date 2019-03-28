@@ -1,0 +1,488 @@
+INT16U phy_reg_read(INT16U phy_addr, INT16U reg_no)
+{
+	int i;
+	INT16U val;
+        INT8U tmp_gpio;
+	val=0;
+  outportb(0x2d1, inportb(0x2d1) & 0xFC);      //d0 (io)  d1(clk) output
+  tmp_gpio = inportb(0x2d0);
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+  outportb(0x2d0, tmp_gpio);
+	for(i=0;i<32;i++)//preample 32 bit '1'
+	{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfc;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfe;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfc;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfe;
+
+	if(phy_addr & 0x10){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x08){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x04){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x02){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x01){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x10){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x08){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x04){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x02){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x01){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+	
+  nop();
+  outportb(0x2d1, inportb(0x2d1) | 0x01);
+  nop();
+  nop();
+  nop();
+  nop();
+
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+
+	asm cli;
+	for(i=0;i<16;i++)//read data
+	{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+		
+		val<<=1;
+	  if(0x01 & inportb(0x2d2)) val= val | 0x01;
+	}
+	asm cli;
+
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+
+	asm sti;
+	return val;
+	
+}
+
+
+void phy_reg_write(INT16U phy_addr, INT16U reg_no, INT16U val)
+{
+	int i;
+        INT8U tmp_gpio;
+
+  outportb(0x2d1, inportb(0x2d1) & 0xFC);      //d0 (io)  d1(clk) output
+  tmp_gpio = inportb(0x2d0);
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+  outportb(0x2d0, tmp_gpio);
+	for(i=0;i<32;i++)//preample 32 bit '1'
+	{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfc;
+	tmp_gpio|=DM9161_MDC_H; 
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfe;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H; 
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfc;
+	tmp_gpio|=DM9161_MDC_H; 
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfe;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H; 
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+
+	if(phy_addr & 0x10){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x08){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x04){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x02){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(phy_addr & 0x01){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x10){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x08){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x04){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x02){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	if(reg_no & 0x01){
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xfd;
+		tmp_gpio|=DM9161_MDC_H; 
+		tmp_gpio|=DM9161_MDIO_H;
+	  outportb(0x2d0, tmp_gpio);//0xff;
+	}else{
+		tmp_gpio&=DM9161_MDC_L;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfc;
+		tmp_gpio|=DM9161_MDC_H;
+		tmp_gpio&=DM9161_MDIO_L;
+		outportb(0x2d0, tmp_gpio); //0xfe;
+	}
+
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xfd;
+	tmp_gpio|=DM9161_MDC_H;
+	tmp_gpio|=DM9161_MDIO_H;
+	outportb(0x2d0, tmp_gpio);//0xff;
+	tmp_gpio&=DM9161_MDC_L;
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfc;
+	tmp_gpio|=DM9161_MDC_H; 
+	tmp_gpio&=DM9161_MDIO_L;
+	outportb(0x2d0, tmp_gpio); //0xfe;
+
+	asm cli;
+	for(i=0;i<16;i++)//write data
+	{
+		if(val & 0x8000){
+			tmp_gpio&=DM9161_MDC_L;
+			tmp_gpio|=DM9161_MDIO_H;
+			outportb(0x2d0, tmp_gpio);//0xfd;
+			tmp_gpio|=DM9161_MDC_H; 
+			tmp_gpio|=DM9161_MDIO_H;
+			outportb(0x2d0, tmp_gpio);//0xff;
+		}else{
+			tmp_gpio&=DM9161_MDC_L;
+			tmp_gpio&=DM9161_MDIO_L;
+			outportb(0x2d0, tmp_gpio); //0xfc;
+			tmp_gpio|=DM9161_MDC_H;
+			tmp_gpio&=DM9161_MDIO_L;
+			outportb(0x2d0, tmp_gpio); //0xfe;
+		}
+		val = val<<1;
+	}
+	asm sti;
+
+
+}

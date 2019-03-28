@@ -1,0 +1,126 @@
+#
+#	Borland C++ 3.10 Compiler/Linker command line option macros
+#	Copyright (C) 1995 Paradigm Systems.  All rights reserved.
+#
+
+MKF		=	$(MKF) paradigm.mkf	# Include in dependancies
+
+#
+#	LIBS		List of libraries to be linked with the application
+#	CFLAGS	 	Compiler command line options
+#	AFLAGS 		Assembler command line options
+#	LFLAGS	 	Linker command line options
+#	PFLAGS 		Paradigm LOCATE command line options
+#	OPTFLAGS		Compiler optimization options
+#
+
+LIBS		=	$(COMPDIR)\LIB\rc$(MODEL).lib
+CFLAGS		=	-c -m$(MODEL) -I. -I$(COMPDIR)\include;include;kernel;boot/bcpp31;arch/include;arch/module;arch/module/display -n$(obj)
+APPCFLAGS	=	-c -m$(MODEL) -I. -I$(COMPDIR)\include -I$(INCLUDE)\inc
+AFLAGS		=	/mx /la /d__$(MODEL)__ /dSTKSIZE=$(STACK) /i
+LFLAGS		=	/v /i /m /s /c /L$(COMPDIR)\lib  /L$(lib)
+PFLAGS		=	-Ls -Ll -Lp -Lx -w-w1008
+OPTFLAGS	=
+
+
+#
+#	Process the debug options.  This step will optionally add debug
+#	information to the compiler, assembler, and linker, plus select the
+#	Paradigm LOCATE configuration file to build the application.
+#
+
+OUT			=	hex
+CFG			=	rm
+!if	$(DEBUG) > 0
+AFLAGS		=	$(AFLAGS) /zd
+CFLAGS		=	$(CFLAGS) -v -r-
+LFLAGS		=	$(LFLAGS) /Tde /v
+!if	$(DEBUG) == 2
+AFLAGS		=	$(AFLAGS) /dPDREMOTE
+CFLAGS		=	$(CFLAGS) -DPDREMOTE
+OUT			=	axe
+CFG			=	rt
+!elif	$(DEBUG) > 2
+!error	Invalid debug option selected
+!endif
+!endif
+
+
+#
+#	Process the selected CPU option
+#
+
+!if	$(CPU) == 0
+CFLAGS		=	$(CFLAGS) -1-
+!elif	$(CPU) == 1
+CFLAGS		=	$(CFLAGS) -1
+!else
+!error	Invalid CPU option selected
+!endif
+
+#
+#	Process the selected floating point option
+#
+
+!if	$(FLOAT) == 0
+CFLAGS		=	$(CFLAGS) -f-
+!else
+LIBS			=	$(COMPDIR)\LIB\remu.lib $(COMPDIR)\LIB\rmath$(MODEL).lib $(LIBS)
+!if	$(FLOAT) == 2
+CFLAGS		=	$(CFLAGS) -f
+AFLAGS		=	$(AFLAGS) /dFLOAT=$(FLOAT) /e
+!elif	$(FLOAT) == 3
+CFLAGS		=	$(CFLAGS) -f87
+AFLAGS		=	$(AFLAGS) /dFLOAT=$(FLOAT) /r
+!else
+!error	Invalid floating point option selected
+!endif
+!endif
+
+#
+#	Process the FARDATA option.  If enabled, we include the module
+#	FARDATA.OBJ in the object file list to copy or decompress class
+#	FAR_DATA at run-time.
+#
+
+!if	$(FARDATA) > 0
+FARDATAOBJ	=	fardata.obj
+PFLAGS		=	$(PFLAGS)  -DHASFARDATA
+!if	$(FARDATA) == 2
+AFLAGS		=	$(AFLAGS) /dCOMPRESSED
+CFLAGS		=	$(CFLAGS) -DCOMPRESSED
+PFLAGS		=	$(PFLAGS) -DCOMPRESSED
+!elif	$(FARDATA) > 2
+!error	Invalid FARDATA option selected
+!endif
+!endif
+
+#
+#	Process the advanced compiler options.
+#
+
+!if	$(DUPSTRING) == 1
+CFLAGS		=	$(CFLAGS) -d
+!endif
+
+!if	$(CHECKSTACK) == 1
+CFLAGS		=	$(CFLAGS) -N
+!endif
+
+!if	$(WARNINGS) == 0
+CFLAGS	=	$(CFLAGS) -w-
+!elif	$(WARNINGS) == 1
+CFLAGS	=	$(CFLAGS) -w
+!else
+!error	Invalid WARNINGS option selected
+!endif
+
+!if	$(OPTIMIZE) == 0
+OPTFLAGS	=	$(OPTFLAGS) -Od
+!elif	$(OPTIMIZE) == 1
+OPTFLAGS	=	$(OPTFLAGS) -O1
+!elif	$(OPTIMIZE) == 2
+OPTFLAGS	=	$(OPTFLAGS) -O2
+!else
+!error	Invalid OPTIMIZE option selected
+!endif

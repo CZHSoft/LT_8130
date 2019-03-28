@@ -1,0 +1,5 @@
+#ifndef x_net_h
+#define x_net_h
+extern void 	mac_init(void);
+extern void clear_mac_ram(void);
+#endif
