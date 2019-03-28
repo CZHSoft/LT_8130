@@ -1,0 +1,169 @@
+#include "includes.h"
+
+#include "ComDrv.h"
+
+#define m_init_h
+
+#define CommonH
+#include "common.h"
+
+void DelayMs(unsigned int number);
+void main_init(void);
+void InitVectorTable(void);
+void interrupt IdleInt();
+void interrupt Int0();
+void interrupt Int1();
+void interrupt Int2();
+void interrupt Int3();
+void interrupt Int4();
+void interrupt Int5();
+void interrupt Int6();
+void interrupt Int7();
+void interrupt Int9();
+void interrupt Int11();
+void interrupt TimeInt();
+
+void *xtm_memcopy(void *dest, void *src, INT16U n);
+INT16U dtime[8];
+INT32U timer_counter;
+INT32U SWTIMER_Tick(void);
+
+INT8U Vflag;
+
+
+void main_init(void)
+{
+    INT8U i;
+    INT16U val;
+    Local.RemoteDebugInfo = 0;      //发送远程调试信息
+
+    InitComm((INT16U)UART0_TX_STATUS, (INT32U)115200, 3, 0xc7, 1);
+    outportb(UART0_TX_DATA, 0x55);
+    InitComm((INT16U)UART1_TX_STATUS, (INT32U)9600, 3, 0xc7, 1);
+    xtm_printf("main_init 1, inportb(CONTROL_REG) = 0x%X\n", inportb(CONTROL_REG));
+    InitVectorTable();
+
+    #ifdef _XTM_ADD
+        
+     Init_LocalVar(); //初始化 Local 结构
+     Local.Test_OV7725FrameRate = 1;    //OV7725 输出帧率
+    #endif
+    InitPcm();    //20120104 xu
+
+    //内部 watchdog, 暂不用    
+    SetPTC1(1);
+    //freq  1  --  正常　　16 --  16分频
+    SetPTC2(1);
+    Local.ClearVideoWindowFlag = 1; //清视频窗口标志
+
+    for (i=0;i<8;i++)
+      dtime[i]=0;
+
+    disp_init();
+
+    #ifdef _XTM_ADD
+     mac_init();
+     phy_init();
+     
+     AddMultiGroup(Local.NsMultiAddr);
+     xtm_printf("AddMultiGroup\n");
+    #endif
+
+  //  InitVideo();
+
+    if(LocalCfg.VideoSdramRefresh == 0)
+      outportb(POWER_CONTROL1, 0x04);//电源控制寄存器1    4周期
+    else
+      outportb(POWER_CONTROL1, 0x84);//电源控制寄存器1    8周期
+    if(LocalCfg.VideoOutput == 0)      //视频输出  0  正常  1 自检
+     {
+      Write7725(0x66, 0x00);
+      Write7725(0x0c, 0xc0);
+     }
+    else
+     {
+      Write7725(0x66, 0x20);
+      Write7725(0x0c, 0xc1);
+     }
+
+    InitGpio();  //初始化GPIO
+    InitVideo();
+
+    StartNoiseDect();
+
+    set_8388_regisger(); //20130220
+}
+void interrupt SPIInt(void)
+{
+//	outportb(UART0_TX_DATA, inportb(SPDR));				// 发送字符
+}
+
+void InitVectorTable(void)
+{
+	int i;
+
+
+ for(i=0;i<256;i++)setvect(i, IdleInt);
+
+ setvect(8, MACInt);
+
+ timer_counter = 1800;
+ setvect(12, TimeInt);
+ setvect(13, Com1Int);
+ setvect(14, Com2Int);
+// setvect(15, SPIInt);
+
+	
+ outportb(INT_MASK, 0x0);//高四个中断使能，低四个中断关闭 1：屏蔽 0:使能
+ outportb(INT_EDGE, 0x00);//都是上升沿触发
+
+ outportb(INT_VECTOR, 0x08);//中断号为8-15
+ outportb(UART0_RX_CTRL, 0xc0);//串口0接收中断使能
+ outportb(UART1_RX_CTRL, 0xc0);//串口1接收中断使能
+// outportb(SPCR, 0xd0);//SPI中断使能
+ enable();
+
+}
+
+
+
+
+#pragma option -w-
+void interrupt IdleInt()
+{
+	outportb(UART0_TX_DATA, 16);				// 发送字符
+}
+
+void interrupt TimeInt()
+{
+	INT8U i;
+	outportb(PTC2_CTRL0,0x41);
+
+        timer_counter ++;        
+	for (i=0;i<8;i++){
+		if (dtime[i])
+			dtime[i]--;
+	}
+
+	outportb(PTC2_CTRL0,0x21);
+}
+INT32U SWTIMER_Tick(void)
+{
+  return timer_counter;
+}
+
+void DelayMs(unsigned int number)
+{
+    unsigned int temp;
+    for(;number!=0;number--){
+	       for(temp=430;temp!=0;temp--){
+	       }
+    }
+}
+#pragma option -w.
+void *xtm_memcopy(void *dest, void *src, INT16U n)
+{
+  asm cli
+  memcpy(dest, src, n);
+  asm sti
+}

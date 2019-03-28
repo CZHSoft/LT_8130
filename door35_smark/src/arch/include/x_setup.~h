@@ -1,0 +1,20 @@
+#ifndef x_setup_h
+#define x_setup_h
+
+extern void DisplaySetupWindow(INT8U RefreshType);    //显示进入设置窗口
+extern void OperateSetupWindow(INT8U wintype, INT8U currwindow);    //进入设置窗口操作
+
+extern void DisplaySetupMainWindow(INT8U RefreshType);    //显示设置主窗口
+extern void OperateSetupMainWindow(INT8U wintype, INT8U currwindow);    //设置主窗口操作
+
+extern void PlayInputErrorWav(void);
+extern void PlayPassErrorWav(void);
+extern void PlayModiSuccWav(void);
+extern void PlayModiFailWav(void);
+
+extern void DisplayAddressWindow(void);    //显示本机地址变更窗口
+extern void OperateAddressWindow(INT8U wintype, INT8U currwindow);  //本机地址变更操作
+
+extern void CheckOnlineTest(void);
+
+#endif

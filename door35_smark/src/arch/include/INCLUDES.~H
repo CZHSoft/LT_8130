@@ -1,0 +1,58 @@
+/*
+*********************************************************************************************************
+*                                                uC/OS-II
+*                                          The Real-Time Kernel
+*
+*                        (c) Copyright 1992-1998, Jean J. Labrosse, Plantation, FL
+*                                           All Rights Reserved
+*
+*                                           MASTER INCLUDE FILE
+*********************************************************************************************************
+*/
+#include    <stddef.h>						/* Definition of NULL */
+#include    <signal.h>						/* Signal handling mechanisms */
+#include    <math.h>
+#include    <float.h>
+#include    <stdio.h>
+#include    <string.h>
+#include    <mem.h>
+#include    <ctype.h>
+#include    <stdlib.h>
+#include    <conio.h>
+#include    <dos.h>
+#include    <setjmp.h>
+#include    <typedefs.h>
+#include    <graphics.h>
+#include    <string.h>
+#include    <alloc.h>
+
+#include    "os_cpu.h"
+#include    "os_cfg_r.h"
+#include    "m_init.h"
+
+#include    "cpu.h"
+
+
+#ifdef      MAIN_GLOBALS
+#define     MAIN_EXT
+#else
+#define     MAIN_EXT  extern
+#endif
+
+/*
+*********************************************************************************************************
+*                                             DATA TYPES
+*********************************************************************************************************
+*/
+
+
+#define nop() asm nop
+
+/*
+*********************************************************************************************************
+*                                              VARIABLES
+*********************************************************************************************************
+*/
+
+#define MJPEG 1
+

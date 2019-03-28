@@ -1,0 +1,33 @@
+
+F:\XTM8130\DOOR35~1\src>set path=..\..\tools\bc31\bin;..\..\tools\locate;..\..\tools\sed 
+
+F:\XTM8130\DOOR35~1\src>copy MAKEFILE_SRC MAKEFILE 
+        1 file(s) copied.
+
+F:\XTM8130\DOOR35~1\src>..\..\tools\bc31\bin\make
+MAKE Version 3.6  Copyright (c) 1992 Borland International
+
+Available memory 15728640 bytes
+
+        cd ..\obj
+        copy x_printf.obj ..\lib\x_printf.lib
+        1 file(s) copied
+        copy ov7725.obj ..\lib\ov7725.lib
+        1 file(s) copied
+        copy x_flash.obj ..\lib\x_flash.lib
+        1 file(s) copied
+        copy x_es8388.obj ..\lib\x_es8388.lib
+        1 file(s) copied
+        copy x_disp.obj ..\lib\x_disp.lib
+        1 file(s) copied
+        copy ComDrv.obj ..\lib\ComDrv.lib
+        1 file(s) copied
+        copy x_w7514.obj ..\lib\x_w7514.lib 
+        1 file(s) copied
+        tlink /v /i /m /s /c /L..\..\tools\bc31\lib /L..\lib /Tde /v @MAKE0000.$$$
+Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
+        cd ..\src
+        locate -Ls -Ll -Lp -Lx -w-w1008 -c..\bin\disp.rm ..\bin\disp
+
+F:\XTM8130\DOOR35~1\src>copy /B  ..\bin\disp.bin ..\bin\door35.bin 
+        1 file(s) copied.

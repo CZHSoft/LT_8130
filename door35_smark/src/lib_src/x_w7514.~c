@@ -1,0 +1,425 @@
+#include "includes.h"
+
+#if 0
+ #define I2C_PORT_OUT 0x2d4
+ #define I2C_PORT_OEN 0x2d5
+ #define I2C_PORT_IN  0x2d6
+
+ #define I2C_SCL_H 0x40     // GPIOB.6
+ #define I2C_SCL_L 0xbf
+ #define I2C_SDA_H 0x80     // GPIOB.7
+ #define I2C_SDA_L 0x7f
+#else
+ #define I2C_PORT_OUT 0x2d0
+ #define I2C_PORT_OEN 0x2d1
+ #define I2C_PORT_IN  0x2d2
+
+ #define I2C_SET_SCL_SDA_OUT  0xf3  //1111 0011
+ #define I2C_SET_SDA_OUT  0xf7  //1111 0111
+ #define I2C_SET_SCA_OUT  0xfb  //1111 1011
+ #define I2C_SET_SDA_IN  0x08  //0000 1000
+
+ #define I2C_SCL_H 0x04     // GPIOA.2
+ #define I2C_SCL_L 0xfb
+ #define I2C_SDA_H 0x08     // GPIOA.3
+ #define I2C_SDA_L 0xf7
+#endif
+//#define es8388_WriteDeviceAddress 0x20
+//#define es8388_ReadDeviceAddress 0x21
+
+#define I2C_ACKTIMES 0x1f
+INT8U Write_i2c(INT8U WriteDeviceAddress, INT8U *pRData, INT8U length);
+INT8U Read_i2c(INT8U ReadDeviceAddress, INT8U *pRData, INT8U length);
+void i2c_START(void);
+void i2c_STOP(void);
+void i2c_ACK(void);
+void i2c_NOACK(void);
+INT8U i2c_send_1byte(INT8U input);
+INT8U i2c_receive_1byte(void);
+//INT8U gpiob;
+void init_w7514(INT8U WriteDeviceAddress, INT8U Sensitive);
+
+void init_w7514(INT8U WriteDeviceAddress, INT8U Sensitive)
+{
+  INT8U tmp_data[2];
+  i2c_STOP();
+  tmp_data[0] = 15;
+  Write_i2c(WriteDeviceAddress, tmp_data, 1);   //向WTC7514DSI(W)写入新的灵敏度级数（15级）
+}
+
+INT8U Read_i2c(INT8U ReadDeviceAddress, INT8U *pRData, INT8U length)
+{
+    INT8U r_byte, i;
+    INT8U tmp_data;
+    INT8U I2CStatus;
+   i2c_START();   //主控MCU在I2C上产生一个起始信号
+   I2CStatus = i2c_send_1byte(ReadDeviceAddress); //向I2C总线传送触摸芯片的器件地址和读出方向标记位
+   //xtm_printf("Read_i2c::I2CStatus = %d\n", I2CStatus);
+   if(I2CStatus)  //收到触摸芯片的正确回应
+   {
+     for(i=0; i <= length-1; i++)
+     {
+     	delay(20);
+     	pRData[i] = i2c_receive_1byte();
+        //xtm_printf("Read_i2c::pRData[%d] = 0x%X\n", i, pRData[i]);
+     	if(i < length-1)
+     	{
+     	   i2c_ACK();
+     	}
+     	else
+     	{
+     	   i2c_NOACK();     	//读完数据后的最后一个字节后的第9个时钟不产生回应位，以通知总线上的从机数据读取完毕。
+     	}
+     }
+     delay(1);
+     i2c_STOP();        //主控MCU在I2C上产生一个停止信号，结束操作
+     return _BX;		//
+   }
+   else
+   {
+     i2c_STOP();    //主控MCU在I2C上产生一个停止信号
+     return(1);
+   }
+  //  return _BX;
+}
+
+
+INT8U Write_i2c(INT8U WriteDeviceAddress,INT8U *pRData, INT8U length)
+{
+    INT8U I2CStatus, i;
+    //xtm_printf("Write_i2c::1 inportb(I2C_PORT_OEN) = 0x%X\n", inportb(I2C_PORT_OEN));
+    i2c_START();
+    //xtm_printf("Write_i2c::2 inportb(I2C_PORT_OEN) = 0x%X\n", inportb(I2C_PORT_OEN));
+    I2CStatus = i2c_send_1byte(WriteDeviceAddress);
+    //xtm_printf("Write_i2c::3 inportb(I2C_PORT_OEN) = 0x%X\n", inportb(I2C_PORT_OEN));
+    //xtm_printf("Write_i2c::1 I2CStatus = %d\n", I2CStatus);
+
+   if(I2CStatus)  //有正确的回应
+   {
+     for(i=0; i<=length-1; i++)
+     {
+      	delay(20); 		    //延时等待
+     	I2CStatus = i2c_send_1byte(pRData[i]); //向芯片发送一字节数据
+        //I2CStatus = i2c_send_1byte(WriteDeviceAddress);
+        //xtm_printf("Write_i2c::2 I2CStatus = %d\n", I2CStatus);
+     	if(I2CStatus == 0)
+     	{
+           delay(1);
+           i2c_STOP();    ////主控MCU在I2C上产生一个停止信号
+           return(1);
+     	}
+     }
+     delay(1);
+     i2c_STOP();    ////主控MCU在I2C上产生一个停止信号
+     return(0);
+   }
+   else
+   {
+     delay(1);
+     i2c_STOP();    ////主控MCU在I2C上产生一个停止信号
+     return(1);
+   }
+}
+
+void i2c_START(void)
+{
+#if 1
+    //设置 SCL  SDA 为输出
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) & I2C_SET_SCL_SDA_OUT);
+
+      /* SDA = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SDA_H);
+
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SDA = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SDA_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+#endif
+}
+
+void i2c_STOP(void)
+{
+#if 1
+    //设置 SCL  SDA 为输出
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) & I2C_SET_SCL_SDA_OUT);
+
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+       /* SDA = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SDA_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SDA = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SDA_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+#endif
+}
+
+
+
+void i2c_NOACK(void)
+{
+#if 1
+    //设置 SCL  SDA 为输出
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) & I2C_SET_SCL_SDA_OUT);
+
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+       /* SDA = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SDA_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+#endif
+}
+
+void i2c_ACK(void)
+{
+#if 1
+    //设置 SCL  SDA 为输出
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) & I2C_SET_SCL_SDA_OUT);
+
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+       /* SDA = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SDA_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+#endif
+}
+
+INT8U i2c_send_1byte(INT8U input)
+{
+#if 1
+    INT8U cdata, i, tmp;
+    //设置 SCL  SDA 为输出
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) & I2C_SET_SCL_SDA_OUT);
+    cdata = input;
+
+    for(i=0; i<8; i++)
+     {
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+      if((cdata & 0x80) == 0x80)
+        outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SDA_H);
+      else
+        outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SDA_L);
+
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+
+      cdata = cdata << 1;
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+     }
+
+
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+    //设置 SDA 为输入
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) | I2C_SET_SDA_IN);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+    //xtm_printf("i2c_send_1byte::1 inportb(I2C_PORT_OEN) = 0x%X\n", inportb(I2C_PORT_OEN));
+    //xtm_printf("i2c_send_1byte::1 inportb(I2C_PORT_IN) = 0x%X\n", inportb(I2C_PORT_IN));
+    tmp = inportb(I2C_PORT_IN);
+    /* SCL = 0 */
+    outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+      if(tmp & I2C_SDA_H)
+        return 0;
+      else
+        return 1;
+#endif
+}
+INT8U i2c_receive_1byte(void)
+{
+#if 1
+    INT8U recv_data, i;
+    recv_data = 0x0;
+    //设  SDA 为输入
+    outportb(I2C_PORT_OEN, inportb(I2C_PORT_OEN) | I2C_SET_SDA_IN);
+
+    for(i=0; i<8; i++)
+     {
+      /* SCL = 0 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      /* SCL = 1 */
+      outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) | I2C_SCL_H);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }
+
+      if(inportb(I2C_PORT_IN) & I2C_SDA_H)
+        recv_data = recv_data | 0x01;
+      if(i < 7)
+        recv_data = recv_data << 1;
+      //xtm_printf("i = %d, inportb(I2C_PORT_IN) = 0x%X\n", i, inportb(I2C_PORT_IN));
+     }
+
+      /* SCL = 0 */
+     /* outportb(I2C_PORT_OUT, inportb(I2C_PORT_OUT) & I2C_SCL_L);
+      asm {
+          nop
+          nop
+          nop
+          nop
+          }   */
+      return recv_data;
+#endif
+}
+

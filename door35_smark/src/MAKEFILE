@@ -1,0 +1,348 @@
+#
+#  makefile
+#  using the Borland C++ compiler.
+#
+
+!ifndef workdir
+workdir = ..
+!endif
+
+src    = $(workdir)\src
+obj    = $(workdir)\obj
+bin    = $(workdir)\bin
+lst    = $(workdir)\lst
+lib    = $(workdir)\lib
+
+bcpp31 = boot\bcpp31
+
+cpu    	  = arch\cpu
+com       = arch\serial
+vga       = arch\vga
+mousedrv  = arch\mouse
+ov7725     = arch\ov7725
+
+
+TOOLSDIR = ..\..\tools
+
+.path.obj = $(obj)
+.path.lst = $(lst)
+#.path.c   = $(src)
+
+
+COMPDIR			=       ..\..\tools\bc31			# Compiler home directory
+
+ASM    			= 	TASM 
+CC     			= 	BCC $(CFLAGS)
+
+BCCFG			=	turboc.cfg				# BC++ compiler configuration file 1, used by kernel
+MKF			=	MAKEFILE			# Build everything if the makefile is changed
+
+
+
+MODEL			=	l						# s, m, c, l, h
+CPU			=	0						# 0 - 8086, 1 - 80186 or better
+FLOAT			=	0						# 0 - none, 2 - emulator, 3 - coprocessor
+FARDATA			=	0						# 0 - none, 1 - normal, 2 - compressed
+
+DEBUG			=	1						# 0 - none, 1 - debug EPROM, 2 - debug PDREMOTE
+OPTIMIZE		=	0						# 0 - none, 1 - size, 2 - speed
+WARNINGS    		=  	1						# 0 - none, 1 - all
+
+DUPSTRING		=	1						# Duplicate string merged
+CHECKSTACK		=  	0						# Check for stack overflow
+STACK			=	1000H						# Application stack size (in bytes)
+!include	PARADIGM.MKF				# Compiler/linker customization options
+
+
+#
+#	Implicit rules for building C, C++, and assembly source modules
+#
+
+.autodepend								# Autodepedency checking
+.suffixes:	.cpp .c .asm			# Rules for ambiguous target dependence
+
+#.cpp.obj:
+#	$(COMPDIR)\bin\bcc $(CFLAGS) {$*.cpp }
+#.c.obj:
+#	$(COMPDIR)\bin\bcc $(CFLAGS) {$< }
+#.asm.obj:
+#	$(COMPDIR)\bin\tasm $(AFLAGS) $*.asm   $(obj)\$*.obj $(lst)\$*.lst
+
+
+#
+#	STARTUP   - Startup object(s) that must be linked first        CLASS = CODE
+#	CORE_FILES   - Kernel routine of RTOS which                    CLASS = CODE
+#       
+#
+
+STARTUP		=    bcpp31.obj
+
+BCPP_FILES      =    dosemu.obj  bcppdmm.obj bcpprtl.obj bcppsio.obj console.obj 
+#bcppflt.obj
+
+		     
+ARCH_FILES	=    m_init.obj  
+		        
+#		      i8259.obj serial.obj x_printf.obj
+		     
+MAIN_FILES	=    main.obj
+
+BOOT_FILES	=     boot.obj loader.obj entry.obj
+
+
+XTM_FILES	=     x_ip.obj x_udp.obj x_net.obj x_comm.obj x_lcd.obj x_main.obj x_timer.obj x_talk.obj \
+								x_gpio.obj x_audio.obj x_video.obj x_first.obj x_setup.obj
+								
+#20121206  lib_src								
+XTM_LIB_FILE =	x_printf.obj ov7725.obj x_flash.obj x_es8388.obj x_disp.obj ComDrv.obj x_w7514.obj
+XTM_LIB = x_printf.lib ov7725.lib x_flash.lib x_es8388.lib x_disp.lib ComDrv.lib x_w7514.lib
+
+#
+#	The remainder of the make file is the targets and dependencies
+#
+	
+disp.$(OUT):		disp.rom $(bin)\disp.$(CFG) $(bin)\fardata.cfg
+	cd $(src)
+	locate $(PFLAGS) -c$(bin)\$*.$(CFG) $(bin)\$*
+	
+disp.rom: 	tlink.cfg \
+		$(STARTUP) \
+		$(XTM_LIB_FILE) \
+		$(ARCH_FILES) \	
+		$(XTM_FILES)  \		
+		$(MAIN_FILES) \
+		$(BOOT_FILES) 
+
+	cd $(obj)
+	
+#20121206  lib_src			
+	#tlib ..\lib\x_printf +x_printf.obj
+	#tlib ..\lib\ov7725 +ov7725.obj
+	#tlib ..\lib\x_zt2083 +x_zt2083.obj
+	#tlib ..\lib\x_flash +x_flash.obj
+	#tlib ..\lib\x_es8388 +x_es8388.obj
+	#tlib ..\lib\x_disp +x_disp.obj
+	
+	copy x_printf.obj ..\lib\x_printf.lib
+	copy ov7725.obj ..\lib\ov7725.lib
+	copy x_flash.obj ..\lib\x_flash.lib
+	copy x_es8388.obj ..\lib\x_es8388.lib
+	copy x_disp.obj ..\lib\x_disp.lib
+	copy ComDrv.obj ..\lib\ComDrv.lib
+	copy x_w7514.obj ..\lib\x_w7514.lib	
+	
+	tlink  $(LFLAGS) @&&!
+$(STARTUP) $(ARCH_FILES) $(XTM_FILES) $(MAIN_FILES) $(BOOT_FILES) 
+$(bin)\$*.rom
+$(bin)\$*.map
+$(LIBS) $(XTM_LIB)
+!
+
+#-------------------startup-----------------------------------------------------
+bcpp31.obj:	$(bcpp31)\bcpp31.asm \
+		$(MKF) 
+		$(ASM)  $(AFLAGS) $(bcpp31)\bcpp31.asm  $(obj)\BCPP31.OBJ $(lst)\BCPP31.LST
+		
+#-------------------BCPP--------------------------------------------------------
+dosemu.obj:	$(bcpp31)\dosemu.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) $(bcpp31)\dosemu.c
+		
+bcppdmm.obj:	$(bcpp31)\bcppdmm.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) $(bcpp31)\bcppdmm.c
+		
+bcpprtl.obj:	$(bcpp31)\bcpprtl.asm \
+		$(MKF)
+		$(ASM) $(AFLAGS) $(bcpp31)\bcpprtl.asm  $(obj)\bcpprtl.OBJ $(lst)\bcpprtl.LST
+		
+bcppflt.obj:	$(bcpp31)\bcppflt.asm \
+		$(MKF)
+		$(ASM) $(AFLAGS) $(bcpp31)\bcppflt.asm  $(obj)\bcppflt.OBJ $(lst)\bcppflt.LST
+
+bcppsio.obj:	$(bcpp31)\bcppsio.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) $(bcpp31)\bcppsio.c
+		
+console.obj:	$(bcpp31)\console.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) $(bcpp31)\console.c
+fardata.obj:	$(bcpp31)\bcpp31.asm \
+		$(MKF)
+		$(ASM) $(AFLAGS) $(bcpp31)\fardata.asm  $(obj)\fardata.OBJ $(lst)\fardata.LST
+		
+		
+#-------------------ARCH-----------------------------------------------------------
+
+#---------------CPU------------------
+
+m_init.obj:	$(cpu)\m_init.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) $(cpu)\m_init.c			
+				
+
+		
+#---------------appl-------------------------------------------------------------
+main.obj:	appl\main.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) appl\main.c
+		
+#---------------xtm 20121206-----------------------------------------------------
+x_printf.obj:	lib_src\x_printf.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) lib_src\x_printf.c
+		
+ov7725.obj: lib_src\ov7725.c \
+		$(BCCFG) \
+		$(MKF)
+    $(CC) -S lib_src\ov7725.c 
+    sed "s/byte public/para public/g" $(obj)\ov7725.asm >$(obj)\ov7725.s
+    $(ASM) $(AFLAGS) /zn $(obj)\ov7725.s  $(obj)\ov7725.obj $(lst)\ov7725.lst		
+		
+x_flash.obj:	lib_src\x_flash.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) lib_src\x_flash.c	
+		
+x_es8388.obj:	lib_src\x_es8388.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) lib_src\x_es8388.c	
+		
+x_disp.obj:	lib_src\x_disp.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) lib_src\x_disp.c			
+        
+ComDrv.obj:	lib_src\ComDrv.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) lib_src\ComDrv.c			
+		
+x_w7514.obj:	lib_src\x_w7514.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) lib_src\x_w7514.c											    
+		
+#---------------xtm 20111107-----------------------------------------------------		
+x_ip.obj:	xtm\x_ip.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_ip.c	
+				
+x_udp.obj:	xtm\x_udp.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_udp.c		
+		
+x_net.obj:	xtm\x_net.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_net.c		
+		
+x_comm.obj:	xtm\x_comm.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_comm.c				
+		
+x_lcd.obj:	xtm\x_lcd.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_lcd.c					
+		
+x_main.obj:	xtm\x_main.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_main.c					
+		
+x_timer.obj:	xtm\x_timer.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_timer.c		
+		
+x_talk.obj:	xtm\x_talk.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_talk.c		
+
+x_gpio.obj:	xtm\x_gpio.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_gpio.c			
+		
+x_audio.obj:	xtm\x_audio.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_audio.c				
+		
+x_video.obj:	xtm\x_video.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_video.c			
+		
+x_first.obj:	xtm\x_first.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_first.c		
+
+x_setup.obj:	xtm\x_setup.c \
+		$(BCCFG) \
+		$(MKF)
+		$(CC) xtm\x_setup.c																																	
+		
+#x_utils.obj:	xtm\x_utils.asm \
+#		$(MKF)
+#		$(ASM) $(AFLAGS) xtm\x_utils.asm $(obj)\x_utils.obj $(lst)\x_utils.lst					
+		
+#---------------boot-------------------------------------------------------------
+#loader.obj:	boot\loader.c \
+#		$(BCCFG) \
+#		$(MKF)
+#		$(CC) boot\loader.c
+
+#loader.obj:	boot\loader.c \
+#		$(MKF)
+#		$(CC) -S boot\loader.c
+#    sed "s/byte public/para public/g" $(obj)\loader.asm >$(obj)\loader.s
+#    $(ASM) $(AFLAGS) /zn $(obj)\loader.s  $(obj)\loader.obj $(lst)\loader.lst		    
+
+loader.obj:	$(obj)\loader.asm \
+		$(MKF)
+		$(ASM) $(AFLAGS) $(obj)\loader.asm $(obj)\loader.obj $(lst)\loader.lst
+		
+boot.obj:	boot\boot.asm \
+		$(MKF)
+		$(ASM) $(AFLAGS) boot\boot.asm $(obj)\boot.obj $(lst)\boot.lst
+		
+entry.obj:	boot\entry.asm \
+		$(MKF)
+		$(ASM) $(AFLAGS) boot\entry.asm $(obj)\entry.obj $(lst)\entry.lst
+
+#		
+################################################################################
+#
+#
+#	Update the compiler/linker configuration files.  This ensures that a
+#	default BC++ configuration file is never used to build an embedded
+#	application.
+#
+
+turboc.cfg:			$(MKF)
+  copy &&|
+$(CFLAGS)
+$(OPTFLAGS)
+| turboc.cfg
+
+
+tlink.cfg:			$(MKF)
+  copy &&|
+$(LFLAGS)
+| tlink.cfg
+

@@ -1,0 +1,112 @@
+char talk_caption_text[LANGUAGEMAXNUM][30] = {
+                                         {"请输入房号..."},
+                                         {"Please Input..."}
+                                        };
+char talk_text[LANGUAGEMAXNUM][5][30] = {
+                                         {"栋", "单元", "*", " - 删除", "# - 呼叫"},
+                                         {"Bd", "Unit", "*", " - Del", "# - Call"}
+                                        };
+
+char openlock_caption_text[LANGUAGEMAXNUM][30] = {
+                                         {"请输入开锁密码:"},
+                                         {"Unlock password:"}
+                                        };
+
+INT16U openlock2_xLeft[2] = {190, 180};                                        
+char openlock_text[LANGUAGEMAXNUM][3][30] = {
+                                         {"*", " - 返回", "# - 确定"},
+                                         {"*", " - Return", "# - Confirm"}
+                                        };
+
+char openlock_result_text[LANGUAGEMAXNUM][30] = {
+                                         {"门锁已打开"},
+                                         {"Door unlock"}
+                                         //{"Door lock is open"}
+                                        };
+
+char call_fail_text[LANGUAGEMAXNUM][2][30] = {
+                                         {"呼叫失败...", "对方正忙..."},
+                                         {"Call fail...", "Busy..."}
+                                        };
+
+char setup_caption_text[LANGUAGEMAXNUM][30] = {
+                                         {"请输入管理员密码:"},
+                                         {"Manager password:"}
+                                        };
+
+extern INT16U openlock2_xLeft[2];
+extern char openlock_text[LANGUAGEMAXNUM][3][30];
+
+char setup_main_text[LANGUAGEMAXNUM][6][20] = {
+                                         {"地址设置", "参数设置", "密码设置", "其它设置", "在线检测", "关于"},
+                                         {"Address", "Parameter", "Password", "Other", "Online", "About"}
+                                        };
+INT16U setup_main_xLeft[2][6] = {
+                        {110, 110, 110, 110, 110, 134},
+                        {110, 110, 110, 110, 110, 134}
+                       };
+
+INT16U setup_main_yTop[2][6] = {
+                        {36, 36, 36, 36, 36, 36},
+                        {36, 36, 36, 36, 36, 36}
+                       };
+
+char addr_caption_text[LANGUAGEMAXNUM][6][20] = {
+                                         {"本机地址:", "MAC地址:", "IP 地址:", "子网掩码:", "网关地址:", "服务器地址:"},
+                                         {"Address:", "MAC Addr:", "IP Addr:", "Subnet Mask:", "Gateway:", "Server:"}
+                                        };
+
+char param_caption_text[LANGUAGEMAXNUM][6][20] = {
+                                         {"密码开锁:", "门禁功能:", "出门按钮:", "门磁检测:", "开锁延时:", "延时开锁:"},
+                                         {"PW Unlock:", "Access:", "Exit Btn:", "Menci:", "Lock Delay:", "Delay Unlock:"}
+                                        };
+char param_open_text[LANGUAGEMAXNUM][2][20] = {
+                                         {"禁用", "启用"},
+                                         {"Dis", "En"}
+                                        };
+
+char param_text1[LANGUAGEMAXNUM][3][20] = {
+                                         {"0.5S", "3S", "5S"},
+                                         {"0.5S", "3S", "5S"}
+                                        };
+char param_text2[LANGUAGEMAXNUM][4][20] = {
+                                         {"0S", "3S", "5S", "10S"},
+                                         {"0S", "3S", "5S", "10S"}
+                                        };
+
+char pass_caption_text[LANGUAGEMAXNUM][6][20] = {
+                                         {"管理密码:", "新密码:", "确认密码:", "开锁密码:", "新密码:", "确认密码:"},
+                                         {"Manager PW:", "New PW:", "Confirm PW:", "Manager PW:", "New PW:", "Confirm PW:"}
+                                        };
+
+char other_caption_text[LANGUAGEMAXNUM][3][20] = {
+                                         {"语言设置:", "振铃选择:", "音量调节:",},
+                                         {"Language:", "Ring Type:", "Spk Volume:"}
+                                        };
+char other_text1[LANGUAGEMAXNUM][2][20] = {
+                                         {"中文", "英文"},
+                                         {"CHN", "ENG"}
+                                        };
+char other_text2[LANGUAGEMAXNUM][3][20] = {
+                                         {"铃声1", "铃声2", "铃声3"},
+                                         {"Ring1", "Ring2", "Ring3"}
+                                        };
+char other_text3[LANGUAGEMAXNUM][3][20] = {
+                                         {"小声", "中等", "大声"},
+                                         {"Small", "Mid", "Large"}
+                                        };
+
+char online_caption[LANGUAGEMAXNUM][5][20] = {
+                                         {"开始房号:", "层", "结束房号:", "层", "层户数"},
+                                         {"Start Room:", "F", "End Room:", "F", "Num"}
+                                        };
+
+char online_return[LANGUAGEMAXNUM][20] = {
+                                         {"返回结果:"},
+                                         {"Return:"}
+                                        };
+
+char SysInfo_caption[LANGUAGEMAXNUM][3][20] = {
+                                         {"硬件版本:", "软件版本:", "产品序列号:"},
+                                         {"HW version:", "SW version:", "Serial No:"}
+                                        };

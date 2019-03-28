@@ -1,0 +1,6 @@
+---- LocalPort[3] Æ¥Åä (5 ÔÚ 3 ÎÄ¼þ ) ----
+X_talk.c (xtm):    CreateMultiUdpBuff(LocalPort[3], MULTI_SEND, Remote.IP[0], sendb, sendlength, 0);
+X_timer.c (xtm):            CreateMultiUdpBuff(LocalPort[3], SINGLE_SEND, Remote.IP[0], sendb, sendlength, 0);
+X_udp.c (xtm):      LocalPort[3] = 8889;
+X_udp.c (xtm):      RemotePort[3] = LocalPort[3];
+X_udp.c (xtm):       CreateMultiUdpBuff(LocalPort[3], SINGLE_SEND, cFromIP, send_b, sendlength, 0);
